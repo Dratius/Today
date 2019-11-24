@@ -688,6 +688,7 @@ class Ui_Web(object):
         self.pushButton.setText(_translate("Web", "ADD SHOW"))
         self.pushButton_2.clicked.connect(lambda: self.get_search_web_data(self.lineEdit.text()))
         self.lineEdit.returnPressed.connect(lambda: self.get_search_web_data(self.lineEdit.text()))
+        self.comboBox.currentIndexChanged.connect(self.get_combo)
 
     def get_search_web_data(self, search):
         critical = QtWidgets.QMessageBox()
@@ -695,7 +696,7 @@ class Ui_Web(object):
         self.comboBox.clear()
         html = ""
         soup = ""
-        results = {}
+        self.results = {}
         tv_maze = "http://api.tvmaze.com/"
         try:
             html = requests.get(
@@ -704,9 +705,10 @@ class Ui_Web(object):
             soup = BeautifulSoup(html.text, "html.parser")
         except ConnectionError as exc:
             critical.setIcon(QtWidgets.QMessageBox.Critical)
-            critical.setText(f""" No Internet Connection.
-
-             For more Info on Error:   {exc}""")
+            critical.setText(f" No Internet Connection.\n"
+                             f"\n"
+                             f"For more Info on Error:"
+                             f"{exc}")
             critical.setWindowTitle("CONNECTION ERROR!!!!")
             critical.setStandardButtons(critical.Ok | critical.Cancel)
             critical.setDefaultButton(QtWidgets.QMessageBox.Ok)
@@ -714,11 +716,14 @@ class Ui_Web(object):
             return critical.exec_()
         except Exception as time:
             critical.setIcon(QtWidgets.QMessageBox.Critical)
-            critical.setText(f""" SERVER DOWN, can't maintain connection.
-
-            Site Might be under maintenance or blocked ip or
-            unavailable internet connection
-            For more Info on Error:  {time}""")
+            critical.setText(f" SERVER DOWN, can't maintain connection.\n"
+                             f"\n"
+                             f"Site Might be under maintenance or blocked ip or\n"
+                             f"unavailable internet connection..\n"
+                             f"\n"
+                             f"\n"
+                             f"For more Info on Error:\n"
+                             f"{time}")
             critical.setWindowTitle("TIMEOUT ERROR!!!!")
             critical.setStandardButtons(critical.Ok | critical.Cancel)
             critical.setDefaultButton(QtWidgets.QMessageBox.Ok)
@@ -729,9 +734,11 @@ class Ui_Web(object):
             html.raise_for_status()
         except Exception as exc:
             critical.setIcon(QtWidgets.QMessageBox.Critical)
-            critical.setText(f"""There was a problem:
-                                    Contact the Developer
-            For more Info Error:  {exc}""")
+            critical.setText(f"There was a problem:\n"
+                             f"Contact the Developer\n"
+                             f"\n"
+                             f"For more Info Error:"
+                             f"{exc}")
             critical.setWindowTitle("CONNECTION ERROR!!!!")
             critical.setStandardButtons(critical.Ok | critical.Cancel)
             critical.setDefaultButton(QtWidgets.QMessageBox.Ok)
@@ -743,23 +750,30 @@ class Ui_Web(object):
             title = result.get('title')
             link = 'http://www.todaytvseries2.com' + result.get('href')
             self.comboBox.addItem(title)
-            results.update({title: link})
+            self.results.update({title: {'Link': link}})
             try:
                 json_search = requests.get(tv_maze + "search/shows?q=" + title)
-                results = json.loads(json_search.text)
-                image = result[0]['show']['image']['original']
+                resulted = json.loads(json_search.text)
+                image = resulted[0]['show']['image']['original']
                 images = requests.get(image)
-                writer.write(images.content)
+                self.results[title]['image'] = images.content
+                self.results[title]['summary'] = resulted[0]['show']['summary']
             except Exception as exc:
                 critical.setIcon(QtWidgets.QMessageBox.Critical)
-                critical.setText(f"""There was a problem:
-                Check Your Internet Connection or Contact the Developer
-                For more Info Error:  {exc}""")
+                critical.setText(f"There was a problem:\n"
+                                 f"Check Your Internet Connection or Contact the Developer\n"
+                                 f"For more Info Error:"
+                                 f"{exc}")
                 critical.setWindowTitle("CONNECTION ERROR!!!!")
                 critical.setStandardButtons(critical.Ok | critical.Cancel)
                 critical.setDefaultButton(QtWidgets.QMessageBox.Ok)
                 critical.setEscapeButton(QtWidgets.QMessageBox.Cancel)
                 return critical.exec_()
+
+    def get_combo(self, text):
+        for i in self.results:
+            if text == i:
+                self.textBrowser.text(self.results[i]['summary'])
 
 
 if __name__ == "__main__":
