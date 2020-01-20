@@ -1,75 +1,12 @@
 # -*- coding: utf-8 -*-
 
 from PyQt5 import QtCore, QtGui, QtWidgets, QtSql
+from PyQt5.QtCore import pyqtSignal
 
 
 # Database Schema
-def new_database(title, episode, size, link, image, url, last_episode, time, description, status, premiere):
-    db = QtSql.QSqlDatabase.addDatabase('QSQLITE')
-    db.setDatabaseName("TodayTvSeries.db")
-    db.setUserName("ER40R")
-    db.setPassword("230798")
-    db.open()
-
-    query = QtSql.QSqlQuery()
-    result = QtSql.QSqlQueryModel()
-    query.exec_(''' CREATE TABLE IF NOT EXISTS "main" (
-                                        "ID"	INTEGER,
-                                        "Name"	TEXT,
-                                        "Link"	TEXT,
-                                        "Last Episode"	TEXT,
-                                        "Database Episode"	TEXT,
-                                        "Schedule"	TEXT,
-                                        "Description"	TEXT,
-                                        "Image"	TEXT,
-                                        "Local Image"	TEXT,
-                                        "Running"	BLOB,
-                                        "Premiere"	TEXT,
-                                        PRIMARY KEY("ID")
-                                    );''')
-    series = """CREATE TABLE IF NOT EXISTS "{}" (
-                                        "ID"	INTEGER,
-                                        "Episode"	TEXT NOT NULL,
-                                        "Size"	TEXT NOT NULL,
-                                        "Link"	INTEGER NOT NULL UNIQUE,
-                                        PRIMARY KEY("ID")
-                                    );""".format(title)
-    query.exec_(series)
-
-    for number, mb, urls in zip(episode, size, link):
-        emp = '''INSERT INTO "{0}" ("Episode","Size","Link")
-                                VALUES({1},{2},{3});'''.format(title,
-                                                               number.getText(), mb.getText(), urls.get('href'))
-        query.exec_(emp)
-
-        images = requests.get(image)
-        with open(f"images\\{title}.jpg", 'wb') as writer:
-            writer.write(images.content)
-
-        local_image = f"images\\{title}.jpg"
-        result.setQuery('SELECT Episode FROM "{}";'.format(title))
-        local_episode = result.record(0).value("Episode")
-
-        if status == "Running":
-            running = True
-        else:
-            running = False
-
-        mainly = f'''INSERT INTO "main"(
-                        "Name","Link",
-                        "Last Episode","Database Episode",
-                        "Schedule","Description","Image","Local Image",
-                        "Running","Premiere")
-                        VALUES({title},{url},{last_episode},{local_episode},{time},{description},{image},{local_image},
-                        {running},{premiere})'''
-        query.exec_(mainly)
-        db.commit()
-        db.close()
-
-
 def database_tables():
-    db = QtSql.QSqlDatabase.addDatabase('QSQLITE')
-    db.setDatabaseName(r"E:\Today\data\series.db")
+    db.setDatabaseName("TodayTvSeries.db")
     db.open("ER40R", "230798")
 
     return db.tables()[1:]
@@ -122,10 +59,10 @@ def Theme():
             Light_Theme()
 
 
-def idms():
+def iDM():
     setting = QtCore.QSettings()
     key = setting.value('settings/UUID', 'None')
-    if key != 'None':
+    if key != 'None' and key is not None:
         return key
     else:
         setting.setValue('settings/UUID', UUID())
@@ -406,10 +343,10 @@ class Ui_MainWindow(object):
         self.radioButton_4.setText(_translate("MainWindow", "One Specific Episode"))
         self.pushButton.setText(_translate("MainWindow", "Send to IDM"))
         self.textBrowser.setToolTip(_translate("MainWindow", "Current Episode"))
-        self.menuFile.setTitle(_translate("MainWindow", "File"))
-        self.menuSettings.setTitle(_translate("MainWindow", "Settings"))
-        self.menuHelp.setTitle(_translate("MainWindow", "Help"))
-        self.menuWindows.setTitle(_translate("MainWindow", "Windows"))
+        self.menuFile.setTitle(_translate("MainWindow", "&File"))
+        self.menuSettings.setTitle(_translate("MainWindow", "&Settings"))
+        self.menuHelp.setTitle(_translate("MainWindow", "&Help"))
+        self.menuWindows.setTitle(_translate("MainWindow", "&Windows"))
         self.menuThemes.setTitle(_translate("MainWindow", "Themes"))
         self.actionNew.setText(_translate("MainWindow", "New"))
         self.actionNew.setShortcut("Ctrl+N")
@@ -567,7 +504,7 @@ class Ui_Dialog(QtWidgets.QDialog):
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_2), _translate("Dialog", "Tab 2"))
         self.toolButton.clicked.connect(lambda: self.browse("Save Location"))
         self.lineEdit.setText(self.settings.value('settings/Cookie'))
-        self.lineEdit_2.setText(idms())
+        self.lineEdit_2.setText(iDM())
         self.lineEdit_3.setText(self.settings.value('settings/Location'))
         self.lineEdit_4.setText(self.settings.value('settings/User'))
         self.lineEdit_5.setText(self.settings.value('settings/Password'))
@@ -594,8 +531,13 @@ class Ui_Dialog(QtWidgets.QDialog):
         setting.sync()
 
 
-class Ui_Web(object):
-    def __init__(self):
+class Ui_Web(QtWidgets.QDialog):
+    sig = pyqtSignal(str, int)
+
+    def __init__(self, parent=None):
+        super(Ui_Web, self).__init__(parent)
+        self.thread = download_thread()
+        self.thread1 = download_threadToday()
         self.scrollAreaWidgetContents_2 = QtWidgets.QWidget()
         self.comboBox = QtWidgets.QComboBox(Web)
         self.gridLayout = QtWidgets.QGridLayout(Web)
@@ -607,6 +549,8 @@ class Ui_Web(object):
         self.pushButton_2 = QtWidgets.QPushButton(Web)
         self.spinBox = QtWidgets.QSpinBox(Web)
         self.pushButton = QtWidgets.QPushButton(Web)
+        self.show = ''
+        self.results = {}
 
     def setupUi(self, Webs):
         Webs.setObjectName("Web")
@@ -675,6 +619,7 @@ class Ui_Web(object):
         self.gridLayout.addWidget(self.lineEdit, 2, 1, 1, 1)
         self.pushButton.setObjectName("pushButton")
         self.gridLayout.addWidget(self.pushButton, 4, 0, 1, 2)
+        self.pushButton.setEnabled(False)
 
         self.retranslateUi(Webs)
         QtCore.QMetaObject.connectSlotsByName(Webs)
@@ -689,32 +634,24 @@ class Ui_Web(object):
         self.pushButton_2.clicked.connect(lambda: self.get_search_web_data(self.lineEdit.text()))
         self.lineEdit.returnPressed.connect(lambda: self.get_search_web_data(self.lineEdit.text()))
         self.comboBox.currentIndexChanged.connect(self.get_combo)
+        self.pushButton.clicked.connect(lambda: self.addShow())
 
     def get_search_web_data(self, search):
-        critical = QtWidgets.QMessageBox()
+        self.pushButton_2.setEnabled(False)
+        self.lineEdit.setEnabled(False)
         self.lineEdit.setText(search)
+        self.sig.connect(self.thread.source_data)
+        self.sig.emit(search, self.spinBox.value())
+        self.thread.start()
+        self.thread.sig1.connect(self.resulting)
+
+    def resulting(self, result, error, i):
+        critical = QtWidgets.QMessageBox()
+        db.setDatabaseName("TodayTvSeries.db")
+        db.open("ER40R", "230798")
+        resulted = QtSql.QSqlQueryModel()
         self.comboBox.clear()
-        html = ""
-        soup = ""
-        self.results = {}
-        tv_maze = "http://api.tvmaze.com/"
-        try:
-            html = requests.get(
-                f"""http://www.todaytvseries2.com/search-series?searchword={search}&searchphrase
-                =all&limit={self.spinBox.value()}""")
-            soup = BeautifulSoup(html.text, "html.parser")
-        except ConnectionError as exc:
-            critical.setIcon(QtWidgets.QMessageBox.Critical)
-            critical.setText(f" No Internet Connection.\n"
-                             f"\n"
-                             f"For more Info on Error:"
-                             f"{exc}")
-            critical.setWindowTitle("CONNECTION ERROR!!!!")
-            critical.setStandardButtons(critical.Ok | critical.Cancel)
-            critical.setDefaultButton(QtWidgets.QMessageBox.Ok)
-            critical.setEscapeButton(QtWidgets.QMessageBox.Cancel)
-            return critical.exec_()
-        except Exception as time:
+        if i == 1:
             critical.setIcon(QtWidgets.QMessageBox.Critical)
             critical.setText(f" SERVER DOWN, can't maintain connection.\n"
                              f"\n"
@@ -723,57 +660,253 @@ class Ui_Web(object):
                              f"\n"
                              f"\n"
                              f"For more Info on Error:\n"
-                             f"{time}")
+                             f"{error}")
             critical.setWindowTitle("TIMEOUT ERROR!!!!")
             critical.setStandardButtons(critical.Ok | critical.Cancel)
             critical.setDefaultButton(QtWidgets.QMessageBox.Ok)
             critical.setEscapeButton(QtWidgets.QMessageBox.Cancel)
-            return critical.exec_()
+            critical.exec_()
+        else:
+            self.results = result
+            self.pushButton.setEnabled(True)
+            for title in result:
+                resulted.setQuery('SELECT m.Maze_ID FROM  main m WHERE m.Name = "{}";'.format(title))
+                available = resulted.record(0).value("Maze_ID")
+                if available is None:
+                    self.comboBox.addItem(title)
+                elif available != result[title]["ID"]:
+                    self.comboBox.addItem(title)
 
-        try:
-            html.raise_for_status()
-        except Exception as exc:
+        db.close()
+        self.pushButton_2.setEnabled(True)
+        self.lineEdit.setEnabled(True)
+
+    def get_combo(self, index):
+        for i in self.results:
+            if self.results[i]['index'] == index:
+                self.textBrowser.setText(self.results[i]['summary'])
+
+    def addShow(self):
+        link = ''
+        self.pushButton.setEnabled(False)
+        db.setDatabaseName("TodayTvSeries.db")
+        db.open("ER40R", "230798")
+
+        query = QtSql.QSqlQuery()
+
+        self.show = self.comboBox.currentText()
+        self.comboBox.clear()
+        self.textBrowser.clear()
+        for title in self.results:
+            if title == self.show:
+                query.exec_(''' CREATE TABLE IF NOT EXISTS "main" (
+                                        "ID"    INTEGER,
+                                        "Name"  TEXT,
+                                        "Link"  TEXT,
+                                        "Last Episode"  TEXT,
+                                        "Database Episode"  TEXT,
+                                        "Schedule"  TEXT,
+                                        "Description"   TEXT,
+                                        "Image" TEXT,
+                                        "Local Image"   TEXT,
+                                        "Running"   BLOB,
+                                        "Day"   TEXT,
+                                        "Maze_ID" INTEGER UNIQUE,
+                                        "Maze_Name" TEXT,
+                                        PRIMARY KEY("ID")
+                                    );''')
+                if self.results[title]["status"] == "Running":
+                    running = True
+                else:
+                    running = False
+                link = self.results[title]['Link']
+                schedule = self.results[title]['schedule']['time']
+                description = self.results[title]['summary']
+                day = self.results[title]['schedule']['days'][0]
+                maze_id = self.results[title]['ID']
+                name = self.results[title]['Maze_Name']
+
+                query.prepare('''INSERT INTO "main"(Name, Link, "Last Episode",
+                                "Database Episode", Schedule, Description,
+                                Image, "Local Image", Running, Day, Maze_ID, Maze_Name)
+                                VALUES(:Name, :Link,
+                                :Last_Episode,:Database_Episode,
+                                :Schedule, :Description, :Image, :Local_Image,
+                                :Running, :Day, :Maze_ID, :Maze_Name);''')
+
+                query.bindValue(":Name", title)
+                query.bindValue(":Link", link)
+                query.bindValue(":Last_Episode", "0")
+                query.bindValue(":Database_Episode", "0")
+                query.bindValue(":Schedule", schedule)
+                query.bindValue(":Description", description)
+                query.bindValue(":Image", "0")
+                query.bindValue(":Local_Image", "0")
+                query.bindValue(":Running", running)
+                query.bindValue(":Day", day)
+                query.bindValue(":Maze_ID", maze_id)
+                query.bindValue(":Maze_Name", name)
+                query.exec_()
+                break
+        db.commit()
+        db.close()
+
+        self.sig.connect(self.thread1.source_data)
+        self.sig.emit(link, 0)
+        self.thread1.start()
+        self.thread1.sig2.connect(self.series)
+
+    def series(self, episode, size, link, error, i):
+        title = self.show
+        critical = QtWidgets.QMessageBox()
+        if i == 0:
+            db.setDatabaseName("TodayTvSeries.db")
+            db.open("ER40R", "230798")
+
+            query = QtSql.QSqlQuery()
+
+            series = """CREATE TABLE IF NOT EXISTS "{}" (
+                                            "ID"    INTEGER,
+                                            "Episode"   TEXT NOT NULL,
+                                            "Size"  TEXT NOT NULL,
+                                            "Link"  INTEGER NOT NULL UNIQUE,
+                                            PRIMARY KEY("ID")
+                                        );""".format(title)
+            query.exec_(series)
+
+            for number, mb, urls in zip(episode, size, link):
+                query.prepare('''INSERT INTO "{}" (Episode, Size, Link)
+                                VALUES(:Episode, :Size, :Link);'''.format(title))
+
+                query.bindValue(":Episode", number.getText())
+                query.bindValue(":Size", mb.getText())
+                query.bindValue(":Link", urls.get('href'))
+                query.exec_()
+
+            db.commit()
+            db.close()
+        else:
             critical.setIcon(QtWidgets.QMessageBox.Critical)
-            critical.setText(f"There was a problem:\n"
-                             f"Contact the Developer\n"
+            critical.setText(f" SERVER DOWN, can't maintain connection.\n"
                              f"\n"
-                             f"For more Info Error:"
-                             f"{exc}")
-            critical.setWindowTitle("CONNECTION ERROR!!!!")
+                             f"Site Might be under maintenance or blocked ip or\n"
+                             f"unavailable internet connection..\n"
+                             f"\n"
+                             f"\n"
+                             f"For more Info on Error:\n"
+                             f"{error}")
+            critical.setWindowTitle("TIMEOUT ERROR!!!!")
             critical.setStandardButtons(critical.Ok | critical.Cancel)
             critical.setDefaultButton(QtWidgets.QMessageBox.Ok)
             critical.setEscapeButton(QtWidgets.QMessageBox.Cancel)
-            return critical.exec_()
+            critical.exec_()
 
-        search_result = soup.select('.uk-article-titletag a')
-        for result in search_result:
-            title = result.get('title')
-            link = 'http://www.todaytvseries2.com' + result.get('href')
-            self.comboBox.addItem(title)
-            self.results.update({title: {'Link': link}})
-            try:
-                json_search = requests.get(tv_maze + "search/shows?q=" + title)
-                resulted = json.loads(json_search.text)
-                image = resulted[0]['show']['image']['original']
-                images = requests.get(image)
-                self.results[title]['image'] = images.content
-                self.results[title]['summary'] = resulted[0]['show']['summary']
-            except Exception as exc:
-                critical.setIcon(QtWidgets.QMessageBox.Critical)
-                critical.setText(f"There was a problem:\n"
-                                 f"Check Your Internet Connection or Contact the Developer\n"
-                                 f"For more Info Error:"
-                                 f"{exc}")
-                critical.setWindowTitle("CONNECTION ERROR!!!!")
-                critical.setStandardButtons(critical.Ok | critical.Cancel)
-                critical.setDefaultButton(QtWidgets.QMessageBox.Ok)
-                critical.setEscapeButton(QtWidgets.QMessageBox.Cancel)
-                return critical.exec_()
 
-    def get_combo(self, text):
-        for i in self.results:
-            if text == i:
-                self.textBrowser.text(self.results[i]['summary'])
+class download_thread(QtCore.QThread):
+    """docstring for  download_thread
+    This is a background process thread for the phase one downloads
+
+    searches data on TodayTvSeries and tv maze for additional data """
+    search: str
+    sig1 = pyqtSignal(dict, str, int)
+
+    def __init__(self):
+        super(download_thread, self).__init__()
+        self.search = ""
+        self.limits = 0
+
+    def source_data(self, source, limit):
+        self.search = source
+        self.limits = limit
+
+    def run(self):
+        err = ''
+        soup = ""
+        results = {}
+        index = 0
+        check = True
+        tv_maze = "http://api.tvmaze.com/"
+        try:
+            html = requests.get(
+                f"""http://www.todaytvseries2.com/search-series?searchword={self.search}&searchphrase
+                =all&limit={self.limits}""")
+            soup = BeautifulSoup(html.text, "html.parser")
+            online = html.ok
+        except Exception as exc:
+            online = False
+            err = str(exc)
+            check = False
+
+        if online:
+            search_result = soup.select('.uk-article-titletag a')
+            for result in search_result:
+                title = result.get('title')
+                link = 'http://www.todaytvseries2.com' + result.get('href')
+                try:
+                    json_search = requests.get(tv_maze + "search/shows?q=" + title)
+                    resulted = json.loads(json_search.text)
+                    if len(resulted) > 0:
+                        results.update({title: {'Link': link}})
+                        results[title]['summary'] = resulted[0]['show']['summary']
+                        results[title]['Maze_Name'] = resulted[0]['show']['name']
+                        results[title]['status'] = resulted[0]['show']['status']
+                        results[title]['schedule'] = resulted[0]['show']['schedule']
+                        results[title]['ID'] = resulted[0]['show']['id']
+                        results[title]['index'] = index
+                        index += 1
+                except Exception as exc:
+                    check = False
+                    err = str(exc)
+                    break
+        if check:
+            self.sig1.emit(results, err, 0)
+        else:
+            self.sig1.emit(results, str(err), 1)
+
+
+class download_threadToday(QtCore.QThread):
+    """docstring for download_threadToday"""
+    link: str
+    sig2 = pyqtSignal(list, list, list, str, int)
+
+    def __init__(self):
+        super(download_threadToday, self).__init__()
+        self.Link = ''
+        self.Number = 0
+
+    def source_data(self, link, number):
+        self.Link = link
+        self.Number = number
+
+    def run(self):
+        episode_number = []
+        size_in_mb = []
+        episode_link = []
+        error = ''
+        soup = ''
+        check = True
+
+        try:
+            html = requests.get(self.Link)
+            soup = BeautifulSoup(html.text, 'html.parser')
+            online = html.ok
+        except Exception as e:
+            online = False
+            check = False
+            error = str(e)
+
+        if online:
+            episode_number = soup.select('.cell2')
+            size_in_mb = soup.select('.cell3')
+            episode_link = soup.select('.cell4 .hvr-icon-sink-away')
+            episode_number.reverse()
+            size_in_mb.reverse()
+            episode_link.reverse()
+
+        if check:
+            self.sig2.emit(episode_number, size_in_mb, episode_link, error, 0)
+        else:
+            self.sig2.emit(episode_number, size_in_mb, episode_link, error, 1)
 
 
 if __name__ == "__main__":
@@ -785,6 +918,9 @@ if __name__ == "__main__":
     from bs4 import BeautifulSoup
 
     app = QtWidgets.QApplication(sys.argv)
+    db = QtSql.QSqlDatabase.addDatabase('QSQLITE')
+    db.setUserName("ER40R")
+    db.setPassword("230798")
     app.setStyle("Fusion")
     QtCore.QCoreApplication.setOrganizationName("ER40R")
     QtCore.QCoreApplication.setOrganizationDomain("tz-theory.forumsw.net")
