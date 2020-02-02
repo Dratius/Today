@@ -31,6 +31,7 @@ def close():
 
 
 def Settings(theme=False):
+    # TODO: Change into a QSetting enable
     default = {'Theme': []}
     default['Theme'].append({
         "Dark": False
@@ -104,6 +105,7 @@ def Light_Theme():
     Settings(False)
 
 
+# GUI CODE
 class Ui_MainWindow(object):
     def __init__(self):
         self.web_dialog = Ui_Web()
@@ -373,6 +375,8 @@ class Ui_MainWindow(object):
         self.radioButton_4.clicked.connect(lambda: self.check())
         self.radioButton_5.clicked.connect(lambda: self.check())
 
+    # FEATURES
+
     def preferences(self):
         self.preferences_dialog.setupUi()
         Dialog.exec_()
@@ -513,6 +517,8 @@ class Ui_Dialog(QtWidgets.QDialog):
         self.lineEdit.returnPressed.connect(lambda: self.lineEdit.setText(self.lineEdit.text()))
         self.pushButton.clicked.connect(lambda: self.save())
 
+    # FEATURES
+
     def browse(self, saver):
         options = QtWidgets.QFileDialog.DontResolveSymlinks | QtWidgets.QFileDialog.ShowDirsOnly
         directory = QtWidgets.QFileDialog.getExistingDirectory(self, saver, self.lineEdit_3.text(),
@@ -521,18 +527,18 @@ class Ui_Dialog(QtWidgets.QDialog):
             self.lineEdit_3.setText(directory)
 
     def save(self):
-        setting = QtCore.QSettings()
-        setting.setValue('settings/Location', self.lineEdit_3.text())
-        setting.setValue('setting/Cookie', self.lineEdit.text())
-        setting.setValue('setting/User', self.lineEdit_4.text())
-        setting.setValue('setting/Password', self.lineEdit_5.text())
-        setting.setValue('setting/Referrer', self.lineEdit_6.text())
-        setting.setValue('setting/PostData', self.lineEdit_7.text())
-        setting.sync()
+        self.settings.setValue('settings/Location', self.lineEdit_3.text())
+        self.settings.setValue('settings/Cookie', self.lineEdit.text())
+        self.settings.setValue('settings/User', self.lineEdit_4.text())
+        self.settings.setValue('settings/Password', self.lineEdit_5.text())
+        self.settings.setValue('settings/Referrer', self.lineEdit_6.text())
+        self.settings.setValue('settings/PostData', self.lineEdit_7.text())
+        self.settings.sync()
 
 
 class Ui_Web(QtWidgets.QDialog):
     sig = pyqtSignal(str, int)
+    sign = pyqtSignal(str, str)
 
     def __init__(self, parent=None):
         super(Ui_Web, self).__init__(parent)
@@ -636,6 +642,8 @@ class Ui_Web(QtWidgets.QDialog):
         self.comboBox.currentIndexChanged.connect(self.get_combo)
         self.pushButton.clicked.connect(lambda: self.addShow())
 
+    # FEATURES
+
     def get_search_web_data(self, search):
         self.pushButton_2.setEnabled(False)
         self.lineEdit.setEnabled(False)
@@ -646,6 +654,7 @@ class Ui_Web(QtWidgets.QDialog):
         self.thread.sig1.connect(self.resulting)
 
     def resulting(self, result, error, i):
+        index = 0
         critical = QtWidgets.QMessageBox()
         db.setDatabaseName("TodayTvSeries.db")
         db.open("ER40R", "230798")
@@ -674,8 +683,12 @@ class Ui_Web(QtWidgets.QDialog):
                 available = resulted.record(0).value("Maze_ID")
                 if available is None:
                     self.comboBox.addItem(title)
+                    self.results[title]['index'] = index
+                    index += 1
                 elif available != result[title]["ID"]:
                     self.comboBox.addItem(title)
+                    self.results[title]['index'] = index
+                    index += 1
 
         db.close()
         self.pushButton_2.setEnabled(True)
@@ -686,6 +699,7 @@ class Ui_Web(QtWidgets.QDialog):
             if self.results[i]['index'] == index:
                 self.textBrowser.setText(self.results[i]['summary'])
 
+    # Database Schema
     def addShow(self):
         link = ''
         self.pushButton.setEnabled(False)
@@ -751,41 +765,15 @@ class Ui_Web(QtWidgets.QDialog):
         db.commit()
         db.close()
 
-        self.sig.connect(self.thread1.source_data)
-        self.sig.emit(link, 0)
+        self.sign.connect(self.thread1.source_data)
+        self.sign.emit(link, self.show)
         self.thread1.start()
-        self.thread1.sig2.connect(self.series)
+        self.thread1.sig2.connect(self.got_error)
 
-    def series(self, episode, size, link, error, i):
-        title = self.show
+    @staticmethod
+    def got_error(error, i):
         critical = QtWidgets.QMessageBox()
-        if i == 0:
-            db.setDatabaseName("TodayTvSeries.db")
-            db.open("ER40R", "230798")
-
-            query = QtSql.QSqlQuery()
-
-            series = """CREATE TABLE IF NOT EXISTS "{}" (
-                                            "ID"    INTEGER,
-                                            "Episode"   TEXT NOT NULL,
-                                            "Size"  TEXT NOT NULL,
-                                            "Link"  INTEGER NOT NULL UNIQUE,
-                                            PRIMARY KEY("ID")
-                                        );""".format(title)
-            query.exec_(series)
-
-            for number, mb, urls in zip(episode, size, link):
-                query.prepare('''INSERT INTO "{}" (Episode, Size, Link)
-                                VALUES(:Episode, :Size, :Link);'''.format(title))
-
-                query.bindValue(":Episode", number.getText())
-                query.bindValue(":Size", mb.getText())
-                query.bindValue(":Link", urls.get('href'))
-                query.exec_()
-
-            db.commit()
-            db.close()
-        else:
+        if i == 1:
             critical.setIcon(QtWidgets.QMessageBox.Critical)
             critical.setText(f" SERVER DOWN, can't maintain connection.\n"
                              f"\n"
@@ -802,11 +790,14 @@ class Ui_Web(QtWidgets.QDialog):
             critical.exec_()
 
 
+# BACKGROUND PROCESSING FOR FASTER RESULTS "Reduces Lags"
 class download_thread(QtCore.QThread):
     """docstring for  download_thread
     This is a background process thread for the phase one downloads
 
-    searches data on TodayTvSeries and tv maze for additional data """
+    searches data on TodayTvSeries and tv maze for additional data
+    Emits Result data from a dict format for processing
+    """
     search: str
     sig1 = pyqtSignal(dict, str, int)
 
@@ -823,7 +814,6 @@ class download_thread(QtCore.QThread):
         err = ''
         soup = ""
         results = {}
-        index = 0
         check = True
         tv_maze = "http://api.tvmaze.com/"
         try:
@@ -852,8 +842,7 @@ class download_thread(QtCore.QThread):
                         results[title]['status'] = resulted[0]['show']['status']
                         results[title]['schedule'] = resulted[0]['show']['schedule']
                         results[title]['ID'] = resulted[0]['show']['id']
-                        results[title]['index'] = index
-                        index += 1
+                        results[title]['index'] = int
                 except Exception as exc:
                     check = False
                     err = str(exc)
@@ -865,20 +854,23 @@ class download_thread(QtCore.QThread):
 
 
 class download_threadToday(QtCore.QThread):
-    """docstring for download_threadToday"""
+    """docstring for download_threadToday
+    Downloads the Individual Episode Links and forwards it onto a database """
+
     link: str
-    sig2 = pyqtSignal(list, list, list, str, int)
+    sig2 = pyqtSignal(str, int)
 
     def __init__(self):
         super(download_threadToday, self).__init__()
         self.Link = ''
-        self.Number = 0
+        self.Title = ''
 
-    def source_data(self, link, number):
+    def source_data(self, link, title):
         self.Link = link
-        self.Number = number
+        self.Title = title
 
     def run(self):
+        database = QtSql.QSqlDatabase.database()
         episode_number = []
         size_in_mb = []
         episode_link = []
@@ -903,10 +895,36 @@ class download_threadToday(QtCore.QThread):
             size_in_mb.reverse()
             episode_link.reverse()
 
+        # TODO: Clear Database Write error as it can't be called from a thread.
         if check:
-            self.sig2.emit(episode_number, size_in_mb, episode_link, error, 0)
+            database.setDatabaseName("TodayTvSeries.db")
+            database.open("ER40R", "230798")
+
+            query = QtSql.QSqlQuery()
+
+            series = """CREATE TABLE IF NOT EXISTS "{}" (
+                                            "ID"    INTEGER,
+                                            "Episode"   TEXT NOT NULL,
+                                            "Size"  TEXT NOT NULL,
+                                            "Link"  INTEGER NOT NULL UNIQUE,
+                                            PRIMARY KEY("ID")
+                                        );""".format(self.Title)
+            query.exec_(series)
+
+            for number, mb, urls in zip(episode_number, size_in_mb, episode_link):
+                query.prepare('''INSERT INTO "{}" (Episode, Size, Link)
+                                VALUES(:Episode, :Size, :Link);'''.format(self.Title))
+
+                query.bindValue(":Episode", number.getText())
+                query.bindValue(":Size", mb.getText())
+                query.bindValue(":Link", urls.get('href'))
+                query.exec_()
+
+            database.commit()
+            database.close()
+            self.sig2.emit(error, 0)
         else:
-            self.sig2.emit(episode_number, size_in_mb, episode_link, error, 1)
+            self.sig2.emit(error, 1)
 
 
 if __name__ == "__main__":
