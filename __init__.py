@@ -4,14 +4,6 @@ from PyQt5 import QtCore, QtGui, QtWidgets, QtSql
 from PyQt5.QtCore import pyqtSignal
 
 
-# Database Schema
-def database_tables():
-    db.setDatabaseName("TodayTvSeries.db")
-    db.open("ER40R", "230798")
-
-    return db.tables()[1:]
-
-
 def UUID():
     with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Classes\Wow6432Node\TypeLib") as location:
         for i in range(0, winreg.QueryInfoKey(location)[0]):
@@ -106,8 +98,11 @@ def Light_Theme():
 
 
 # GUI CODE
-class Ui_MainWindow(object):
+class Ui_MainWindow(QtWidgets.QDialog):
+    sig = pyqtSignal(int, str)
+
     def __init__(self):
+        super(Ui_MainWindow, self).__init__()
         self.web_dialog = Ui_Web()
         self.preferences_dialog = Ui_Dialog()
         self.actionCheck_for_updates = QtWidgets.QAction(MainWindow)
@@ -162,6 +157,8 @@ class Ui_MainWindow(object):
         self.lineEdit_2 = QtWidgets.QLineEdit(self.centralwidget)
         self.line_2 = QtWidgets.QFrame(self.centralwidget)
         self.settings = QtCore.QSettings("ER4OR", "Today")
+        self.database = databaseThread()
+        self.available = []
 
     def setupUi(self, Window):
         Window.setObjectName("MainWindow")
@@ -312,7 +309,7 @@ class Ui_MainWindow(object):
         self.menuThemes.addAction(self.actionLight)
         self.retranslateUi(Window)
         QtCore.QMetaObject.connectSlotsByName(Window)
-        self.model.setStringList(database_tables())
+        self.model.setStringList(self.available)
         self.completer.setModel(self.model)
         self.lineEdit.setCompleter(self.completer)
         self.lineEdit_2.setCursorMoveStyle(QtCore.Qt.VisualMoveStyle)
@@ -374,6 +371,7 @@ class Ui_MainWindow(object):
         self.radioButton_3.clicked.connect(lambda: self.check())
         self.radioButton_4.clicked.connect(lambda: self.check())
         self.radioButton_5.clicked.connect(lambda: self.check())
+        self.lineEdit.textChanged.connect(lambda: self.databaseShow(self.lineEdit.text()))
 
     # FEATURES
 
@@ -394,6 +392,16 @@ class Ui_MainWindow(object):
         else:
             self.spinBox_4.setEnabled(False)
             self.spinBox_3.setEnabled(False)
+
+    def databaseShow(self, text):
+        self.sig.connect(self.database.sourceData2)
+        self.sig.emit(4, text)
+        self.database.start()
+        self.database.sig.connect(self.availableShow)
+
+    # TODO: Find another Completer system
+    def availableShow(self, available):
+        self.available = available
 
 
 class Ui_Dialog(QtWidgets.QDialog):
@@ -537,13 +545,16 @@ class Ui_Dialog(QtWidgets.QDialog):
 
 
 class Ui_Web(QtWidgets.QDialog):
-    sig = pyqtSignal(str, int)
-    sign = pyqtSignal(str, str)
+    sig1 = pyqtSignal(int, str)
+    sig2 = pyqtSignal(str, str)
+    sig3 = pyqtSignal(int, dict)
+    sig4 = pyqtSignal(int, list, list, list)
 
     def __init__(self, parent=None):
         super(Ui_Web, self).__init__(parent)
-        self.thread = download_thread()
-        self.thread1 = download_threadToday()
+        self.thread = queryThread()
+        self.thread1 = todayDownloadThread()
+        self.thread2 = databaseThread()
         self.scrollAreaWidgetContents_2 = QtWidgets.QWidget()
         self.comboBox = QtWidgets.QComboBox(Web)
         self.gridLayout = QtWidgets.QGridLayout(Web)
@@ -639,28 +650,25 @@ class Ui_Web(QtWidgets.QDialog):
         self.pushButton.setText(_translate("Web", "ADD SHOW"))
         self.pushButton_2.clicked.connect(lambda: self.get_search_web_data(self.lineEdit.text()))
         self.lineEdit.returnPressed.connect(lambda: self.get_search_web_data(self.lineEdit.text()))
-        self.comboBox.currentIndexChanged.connect(self.get_combo)
-        self.pushButton.clicked.connect(lambda: self.addShow())
+        self.comboBox.currentIndexChanged.connect(self.comboSummary)
+        self.pushButton.clicked.connect(lambda: self.Show())
 
     # FEATURES
 
+    # Searches and Fetches Query Information Data
     def get_search_web_data(self, search):
         self.pushButton_2.setEnabled(False)
         self.lineEdit.setEnabled(False)
         self.lineEdit.setText(search)
-        self.sig.connect(self.thread.source_data)
-        self.sig.emit(search, self.spinBox.value())
+        self.sig1.connect(self.thread.source_data)
+        self.sig1.emit(self.spinBox.value(), search)
         self.thread.start()
-        self.thread.sig1.connect(self.resulting)
+        self.thread.sig.connect(self.error_Duplicates)
 
-    def resulting(self, result, error, i):
-        index = 0
+    def error_Duplicates(self, result, error, i):
         critical = QtWidgets.QMessageBox()
-        db.setDatabaseName("TodayTvSeries.db")
-        db.open("ER40R", "230798")
-        resulted = QtSql.QSqlQueryModel()
         self.comboBox.clear()
-        if i == 1:
+        if i == 0:
             critical.setIcon(QtWidgets.QMessageBox.Critical)
             critical.setText(f" SERVER DOWN, can't maintain connection.\n"
                              f"\n"
@@ -675,103 +683,42 @@ class Ui_Web(QtWidgets.QDialog):
             critical.setDefaultButton(QtWidgets.QMessageBox.Ok)
             critical.setEscapeButton(QtWidgets.QMessageBox.Cancel)
             critical.exec_()
-        else:
-            self.results = result
+        elif i == 1:
+            self.sig3.connect(self.thread2.sourceData)
+            self.sig3.emit(i, result)
+            self.thread2.start()
+            self.thread2.sig.connect(self.add_Combo)
             self.pushButton.setEnabled(True)
-            for title in result:
-                resulted.setQuery('SELECT m.Maze_ID FROM  main m WHERE m.Name = "{}";'.format(title))
-                available = resulted.record(0).value("Maze_ID")
-                if available is None:
-                    self.comboBox.addItem(title)
-                    self.results[title]['index'] = index
-                    index += 1
-                elif available != result[title]["ID"]:
-                    self.comboBox.addItem(title)
-                    self.results[title]['index'] = index
-                    index += 1
-
-        db.close()
         self.pushButton_2.setEnabled(True)
         self.lineEdit.setEnabled(True)
 
-    def get_combo(self, index):
+    # Combobox Data
+    def add_Combo(self, items):
+        for title in items:
+            self.comboBox.addItem(title)
+
+    def comboSummary(self, index):
         for i in self.results:
             if self.results[i]['index'] == index:
                 self.textBrowser.setText(self.results[i]['summary'])
 
-    # Database Schema
-    def addShow(self):
-        link = ''
+    # Fetches Show Download Links
+    def Show(self):
         self.pushButton.setEnabled(False)
-        db.setDatabaseName("TodayTvSeries.db")
-        db.open("ER40R", "230798")
-
-        query = QtSql.QSqlQuery()
-
-        self.show = self.comboBox.currentText()
-        self.comboBox.clear()
         self.textBrowser.clear()
-        for title in self.results:
-            if title == self.show:
-                query.exec_(''' CREATE TABLE IF NOT EXISTS "main" (
-                                        "ID"    INTEGER,
-                                        "Name"  TEXT,
-                                        "Link"  TEXT,
-                                        "Last Episode"  TEXT,
-                                        "Database Episode"  TEXT,
-                                        "Schedule"  TEXT,
-                                        "Description"   TEXT,
-                                        "Image" TEXT,
-                                        "Local Image"   TEXT,
-                                        "Running"   BLOB,
-                                        "Day"   TEXT,
-                                        "Maze_ID" INTEGER UNIQUE,
-                                        "Maze_Name" TEXT,
-                                        PRIMARY KEY("ID")
-                                    );''')
-                if self.results[title]["status"] == "Running":
-                    running = True
-                else:
-                    running = False
-                link = self.results[title]['Link']
-                schedule = self.results[title]['schedule']['time']
-                description = self.results[title]['summary']
-                day = self.results[title]['schedule']['days'][0]
-                maze_id = self.results[title]['ID']
-                name = self.results[title]['Maze_Name']
+        self.sig1.connect(self.thread2.sourceData2)
+        self.sig1.emit(2, self.comboBox.currentText())
+        self.thread2.start()
+        self.thread2.sig1.connect(self.getShowData)
 
-                query.prepare('''INSERT INTO "main"(Name, Link, "Last Episode",
-                                "Database Episode", Schedule, Description,
-                                Image, "Local Image", Running, Day, Maze_ID, Maze_Name)
-                                VALUES(:Name, :Link,
-                                :Last_Episode,:Database_Episode,
-                                :Schedule, :Description, :Image, :Local_Image,
-                                :Running, :Day, :Maze_ID, :Maze_Name);''')
-
-                query.bindValue(":Name", title)
-                query.bindValue(":Link", link)
-                query.bindValue(":Last_Episode", "0")
-                query.bindValue(":Database_Episode", "0")
-                query.bindValue(":Schedule", schedule)
-                query.bindValue(":Description", description)
-                query.bindValue(":Image", "0")
-                query.bindValue(":Local_Image", "0")
-                query.bindValue(":Running", running)
-                query.bindValue(":Day", day)
-                query.bindValue(":Maze_ID", maze_id)
-                query.bindValue(":Maze_Name", name)
-                query.exec_()
-                break
-        db.commit()
-        db.close()
-
-        self.sign.connect(self.thread1.source_data)
-        self.sign.emit(link, self.show)
+    def getShowData(self, link):
+        self.sig2.connect(self.thread1.sourceData)
+        self.sig2.emit(link, self.comboBox.currentText())
         self.thread1.start()
-        self.thread1.sig2.connect(self.got_error)
+        self.thread1.sig.connect(self.addShowData)
+        self.comboBox.clear()
 
-    @staticmethod
-    def got_error(error, i):
+    def addShowData(self, episode_number, size_in_mb, episode_link, error, i):
         critical = QtWidgets.QMessageBox()
         if i == 1:
             critical.setIcon(QtWidgets.QMessageBox.Critical)
@@ -788,10 +735,14 @@ class Ui_Web(QtWidgets.QDialog):
             critical.setDefaultButton(QtWidgets.QMessageBox.Ok)
             critical.setEscapeButton(QtWidgets.QMessageBox.Cancel)
             critical.exec_()
+        elif i == 3:
+            self.sig4.connect(self.thread2.sourceData3)
+            self.sig4.emit(i, episode_number, size_in_mb, episode_link)
+            self.thread2.start()
 
 
 # BACKGROUND PROCESSING FOR FASTER RESULTS "Reduces Lags"
-class download_thread(QtCore.QThread):
+class queryThread(QtCore.QThread):
     """docstring for  download_thread
     This is a background process thread for the phase one downloads
 
@@ -799,14 +750,14 @@ class download_thread(QtCore.QThread):
     Emits Result data from a dict format for processing
     """
     search: str
-    sig1 = pyqtSignal(dict, str, int)
+    sig = pyqtSignal(dict, str, int)
 
     def __init__(self):
-        super(download_thread, self).__init__()
+        super(queryThread, self).__init__()
         self.search = ""
         self.limits = 0
 
-    def source_data(self, source, limit):
+    def source_data(self, limit, source):
         self.search = source
         self.limits = limit
 
@@ -848,29 +799,28 @@ class download_thread(QtCore.QThread):
                     err = str(exc)
                     break
         if check:
-            self.sig1.emit(results, err, 0)
+            self.sig.emit(results, err, 1)
         else:
-            self.sig1.emit(results, str(err), 1)
+            self.sig.emit(results, err, 0)
 
 
-class download_threadToday(QtCore.QThread):
+class todayDownloadThread(QtCore.QThread):
     """docstring for download_threadToday
     Downloads the Individual Episode Links and forwards it onto a database """
 
     link: str
-    sig2 = pyqtSignal(str, int)
+    sign = pyqtSignal(str, int)
 
     def __init__(self):
-        super(download_threadToday, self).__init__()
+        super(todayDownloadThread, self).__init__()
         self.Link = ''
         self.Title = ''
 
-    def source_data(self, link, title):
+    def sourceData(self, link, title):
         self.Link = link
         self.Title = title
 
     def run(self):
-        database = QtSql.QSqlDatabase.database()
         episode_number = []
         size_in_mb = []
         episode_link = []
@@ -897,11 +847,123 @@ class download_threadToday(QtCore.QThread):
 
         # TODO: Clear Database Write error as it can't be called from a thread.
         if check:
-            database.setDatabaseName("TodayTvSeries.db")
-            database.open("ER40R", "230798")
+            self.sign.emit(episode_number, size_in_mb, episode_link, error, 3)
+        else:
+            self.sign.emit(episode_number, size_in_mb, episode_link, error, 0)
 
-            query = QtSql.QSqlQuery()
 
+class databaseThread(QtCore.QThread):
+    """docstring for databaseThread"""
+    sig = pyqtSignal(list)
+    sig1 = pyqtSignal(str)
+
+    def __init__(self):
+        super(databaseThread, self).__init__()
+        self.Result = {}
+        self.Number = 0
+        self.Show = ''
+        self.Episode = []
+        self.Size = []
+        self.Link = []
+
+    def sourceData(self, number, result):
+        self.Result = result
+        self.Number = number
+
+    def sourceData2(self, number, show):
+        self.Show = show
+        self.Number = number
+
+    def sourceData3(self, number, episode_number, size_in_mb, episode_link):
+        self.Episode = episode_number
+        self.Size = size_in_mb
+        self.Link = episode_link
+        self.Number = number
+
+    def run(self):
+        db = QtSql.QSqlDatabase.addDatabase('QSQLITE')
+        resulted = QtSql.QSqlQueryModel()
+        query = QtSql.QSqlQuery()
+        db.setUserName("ER40R")
+        db.setPassword("230798")
+        db.setDatabaseName("TodayTvSeries.db")
+        db.open("ER40R", "230798")
+
+        if self.Number == 1:
+            index = 0
+            items = []
+            for title in self.Result:
+                resulted.setQuery('SELECT m.Maze_ID FROM  main m WHERE m.Name = "{}";'.format(title))
+                available = resulted.record(0).value("Maze_ID")
+                if available is None:
+                    items.append(title)
+                    self.Result[title]['index'] = index
+                    index += 1
+                elif available != self.Result[title]["ID"]:
+                    items.append(title)
+                    self.Result[title]['index'] = index
+                    index += 1
+            db.close()
+            self.sig.emit(items)
+
+        elif self.Number == 2:
+            link = ''
+            for title in self.Result:
+                if title == self.Show:
+                    query.exec_(''' CREATE TABLE IF NOT EXISTS "main" (
+                                            "ID"    INTEGER,
+                                            "Name"  TEXT,
+                                            "Link"  TEXT,
+                                            "Last Episode"  TEXT,
+                                            "Database Episode"  TEXT,
+                                            "Schedule"  TEXT,
+                                            "Description"   TEXT,
+                                            "Image" TEXT,
+                                            "Local Image"   TEXT,
+                                            "Running"   BLOB,
+                                            "Day"   TEXT,
+                                            "Maze_ID" INTEGER UNIQUE,
+                                            "Maze_Name" TEXT,
+                                            PRIMARY KEY("ID")
+                                        );''')
+                    if self.Result[title]["status"] == "Running":
+                        running = True
+                    else:
+                        running = False
+                    link = self.Result[title]['Link']
+                    schedule = self.Result[title]['schedule']['time']
+                    description = self.Result[title]['summary']
+                    day = self.Result[title]['schedule']['days'][0]
+                    maze_id = self.Result[title]['ID']
+                    name = self.Result[title]['Maze_Name']
+
+                    query.prepare('''INSERT INTO "main"(Name, Link, "Last Episode",
+                                    "Database Episode", Schedule, Description,
+                                    Image, "Local Image", Running, Day, Maze_ID, Maze_Name)
+                                    VALUES(:Name, :Link,
+                                    :Last_Episode,:Database_Episode,
+                                    :Schedule, :Description, :Image, :Local_Image,
+                                    :Running, :Day, :Maze_ID, :Maze_Name);''')
+
+                    query.bindValue(":Name", title)
+                    query.bindValue(":Link", link)
+                    query.bindValue(":Last_Episode", "0")
+                    query.bindValue(":Database_Episode", "0")
+                    query.bindValue(":Schedule", schedule)
+                    query.bindValue(":Description", description)
+                    query.bindValue(":Image", "0")
+                    query.bindValue(":Local_Image", "0")
+                    query.bindValue(":Running", running)
+                    query.bindValue(":Day", day)
+                    query.bindValue(":Maze_ID", maze_id)
+                    query.bindValue(":Maze_Name", name)
+                    query.exec_()
+                    break
+            db.commit()
+            db.close()
+            self.sig1.emit(link)
+
+        elif self.Number == 3:
             series = """CREATE TABLE IF NOT EXISTS "{}" (
                                             "ID"    INTEGER,
                                             "Episode"   TEXT NOT NULL,
@@ -911,7 +973,7 @@ class download_threadToday(QtCore.QThread):
                                         );""".format(self.Title)
             query.exec_(series)
 
-            for number, mb, urls in zip(episode_number, size_in_mb, episode_link):
+            for number, mb, urls in zip(self.Episode, self.Size, self.Link):
                 query.prepare('''INSERT INTO "{}" (Episode, Size, Link)
                                 VALUES(:Episode, :Size, :Link);'''.format(self.Title))
 
@@ -920,11 +982,17 @@ class download_threadToday(QtCore.QThread):
                 query.bindValue(":Link", urls.get('href'))
                 query.exec_()
 
-            database.commit()
-            database.close()
-            self.sig2.emit(error, 0)
-        else:
-            self.sig2.emit(error, 1)
+            db.commit()
+            db.close()
+        elif self.Number == 4:
+            resulted.setQuery('SELECT m.Name FROM main m WHERE m.Name LIKE "%{}%"'.format(self.Show))
+            available = []
+            i = 0
+            while resulted.record(i).value("Name") is not None:
+                available.append(resulted.record(i).value("Name"))
+                i += 1
+            db.close()
+            self.sig.emit(available)
 
 
 if __name__ == "__main__":
@@ -936,9 +1004,6 @@ if __name__ == "__main__":
     from bs4 import BeautifulSoup
 
     app = QtWidgets.QApplication(sys.argv)
-    db = QtSql.QSqlDatabase.addDatabase('QSQLITE')
-    db.setUserName("ER40R")
-    db.setPassword("230798")
     app.setStyle("Fusion")
     QtCore.QCoreApplication.setOrganizationName("ER40R")
     QtCore.QCoreApplication.setOrganizationDomain("tz-theory.forumsw.net")
