@@ -309,9 +309,6 @@ class Ui_MainWindow(QtWidgets.QDialog):
         self.menuThemes.addAction(self.actionLight)
         self.retranslateUi(Window)
         QtCore.QMetaObject.connectSlotsByName(Window)
-        self.model.setStringList(self.available)
-        self.completer.setModel(self.model)
-        self.lineEdit.setCompleter(self.completer)
         self.lineEdit_2.setCursorMoveStyle(QtCore.Qt.VisualMoveStyle)
         self.lineEdit_2.setClearButtonEnabled(True)
         self.lineEdit_2.setObjectName("lineEdit_2")
@@ -321,6 +318,10 @@ class Ui_MainWindow(QtWidgets.QDialog):
         self.line_2.setObjectName("line_2")
         self.gridLayout.addWidget(self.line_2, 0, 1, 1, 1)
         self.settings.beginGroup("main_window")
+        self.model.setStringList(self.available)
+        self.completer.setModel(self.model)
+        self.lineEdit.setCompleter(self.completer)
+        self.completer.setCompletionMode(self.completer.PopupCompletion)
 
     def retranslateUi(self, Window):
         _translate = QtCore.QCoreApplication.translate
@@ -328,7 +329,7 @@ class Ui_MainWindow(QtWidgets.QDialog):
         self.label.setText(_translate("MainWindow", "Season"))
         self.label_2.setText(_translate("MainWindow", "Episode"))
         self.radioButton_5.setText(_translate("MainWindow", "From And To Specifics"))
-        self.lineEdit.setToolTip(_translate("MainWindow", "<html><head/><body><p>Search The Web</p></body></html>"))
+        self.lineEdit_2.setToolTip(_translate("MainWindow", "<html><head/><body><p>Search The Web</p></body></html>"))
         self.lineEdit.setPlaceholderText(_translate("MainWindow", "Search"))
         self.lcdNumber.setToolTip(_translate("MainWindow", "<html><head/><body><p>Time Till Next "
                                                            "Release</p></body></html>"))
@@ -394,14 +395,19 @@ class Ui_MainWindow(QtWidgets.QDialog):
             self.spinBox_3.setEnabled(False)
 
     def databaseShow(self, text):
-        self.sig.connect(self.database.sourceData2)
-        self.sig.emit(4, text)
-        self.database.start()
-        self.database.sig.connect(self.availableShow)
+        self.available = []
+        with sqlite3.connect(r"E:\Project Files\Projects\Python\Today\TodayTvseries.db") as connection:
+            cursor = connection.cursor()
+            cursor.execute('SELECT m.Name FROM main m WHERE m.Name LIKE "%{}%"'.format(text))
+            available_tip = cursor.fetchall()
+            for i in available_tip:
+                self.available.append(i[0])
 
     # TODO: Find another Completer system
     def availableShow(self, available):
-        self.available = available
+        self.model.setStringList(available)
+        self.completer.setModel(self.model)
+        self.lineEdit.setCompleter(self.completer)
 
 
 class Ui_Dialog(QtWidgets.QDialog):
@@ -554,7 +560,7 @@ class Ui_Web(QtWidgets.QDialog):
         super(Ui_Web, self).__init__(parent)
         self.thread = queryThread()
         self.thread1 = todayDownloadThread()
-        self.thread2 = databaseThread()
+        self.database = databaseThread()
         self.scrollAreaWidgetContents_2 = QtWidgets.QWidget()
         self.comboBox = QtWidgets.QComboBox(Web)
         self.gridLayout = QtWidgets.QGridLayout(Web)
@@ -684,10 +690,10 @@ class Ui_Web(QtWidgets.QDialog):
             critical.setEscapeButton(QtWidgets.QMessageBox.Cancel)
             critical.exec_()
         elif i == 1:
-            self.sig3.connect(self.thread2.sourceData)
+            self.sig3.connect(self.database.sourceData)
             self.sig3.emit(i, result)
-            self.thread2.start()
-            self.thread2.sig.connect(self.add_Combo)
+            self.database.start()
+            self.database.sig.connect(self.add_Combo)
             self.pushButton.setEnabled(True)
         self.pushButton_2.setEnabled(True)
         self.lineEdit.setEnabled(True)
@@ -706,10 +712,10 @@ class Ui_Web(QtWidgets.QDialog):
     def Show(self):
         self.pushButton.setEnabled(False)
         self.textBrowser.clear()
-        self.sig1.connect(self.thread2.sourceData2)
+        self.sig1.connect(self.database.sourceData2)
         self.sig1.emit(2, self.comboBox.currentText())
-        self.thread2.start()
-        self.thread2.sig1.connect(self.getShowData)
+        self.database.start()
+        self.database.sig1.connect(self.getShowData)
 
     def getShowData(self, link):
         self.sig2.connect(self.thread1.sourceData)
@@ -736,9 +742,9 @@ class Ui_Web(QtWidgets.QDialog):
             critical.setEscapeButton(QtWidgets.QMessageBox.Cancel)
             critical.exec_()
         elif i == 3:
-            self.sig4.connect(self.thread2.sourceData3)
+            self.sig4.connect(self.database.sourceData3)
             self.sig4.emit(i, episode_number, size_in_mb, episode_link)
-            self.thread2.start()
+            self.database.start()
 
 
 # BACKGROUND PROCESSING FOR FASTER RESULTS "Reduces Lags"
@@ -984,15 +990,6 @@ class databaseThread(QtCore.QThread):
 
             db.commit()
             db.close()
-        elif self.Number == 4:
-            resulted.setQuery('SELECT m.Name FROM main m WHERE m.Name LIKE "%{}%"'.format(self.Show))
-            available = []
-            i = 0
-            while resulted.record(i).value("Name") is not None:
-                available.append(resulted.record(i).value("Name"))
-                i += 1
-            db.close()
-            self.sig.emit(available)
 
 
 if __name__ == "__main__":
@@ -1000,6 +997,7 @@ if __name__ == "__main__":
     import json
     import os
     import winreg
+    import sqlite3
     import requests
     from bs4 import BeautifulSoup
 
