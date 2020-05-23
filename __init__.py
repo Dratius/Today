@@ -5,7 +5,9 @@ from PyQt5.QtCore import pyqtSignal
 
 
 def UUID():
-    with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Classes\Wow6432Node\TypeLib") as location:
+    with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Classes"
+                                                   r"\Wow6432Node\TypeLib") \
+            as location:
         for i in range(0, winreg.QueryInfoKey(location)[0]):
             try:
                 sub = winreg.EnumKey(location, i)
@@ -25,9 +27,7 @@ def close():
 def Settings(theme=False):
     # TODO: Change into a QSetting enable
     default = {'Theme': []}
-    default['Theme'].append({
-        "Dark": False
-    })
+    default['Theme'].append({"Dark": False})
     if not os.path.exists('settings.JSON'):
         with open('settings.JSON', 'w+') as handle:
             json.dump(default, handle)
@@ -100,9 +100,11 @@ def Light_Theme():
 # GUI CODE
 class Ui_MainWindow(QtWidgets.QDialog):
     sig = pyqtSignal(int, str)
+    sig1 = pyqtSignal(int)
 
     def __init__(self):
         super(Ui_MainWindow, self).__init__()
+        self.available = []
         self.web_dialog = Ui_Web()
         self.preferences_dialog = Ui_Dialog()
         self.actionCheck_for_updates = QtWidgets.QAction(MainWindow)
@@ -115,7 +117,8 @@ class Ui_MainWindow(QtWidgets.QDialog):
         self.actionQuit = QtWidgets.QAction(MainWindow)
         self.actionNew = QtWidgets.QAction(MainWindow)
         self.dockWidgetContents = QtWidgets.QWidget()
-        self.calendarWidget = QtWidgets.QCalendarWidget(self.dockWidgetContents)
+        self.calendarWidget = QtWidgets.QCalendarWidget(
+            self.dockWidgetContents)
         self.horizontalLayout = QtWidgets.QHBoxLayout(self.dockWidgetContents)
         self.dockWidget = QtWidgets.QDockWidget("Calendar", MainWindow)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
@@ -139,7 +142,6 @@ class Ui_MainWindow(QtWidgets.QDialog):
         self.radioButton_2 = QtWidgets.QRadioButton(self.centralwidget)
         self.radioButton_3 = QtWidgets.QRadioButton(self.centralwidget)
         self.radioButton = QtWidgets.QRadioButton(self.centralwidget)
-        self.listView = QtWidgets.QListView(self.centralwidget)
         self.line = QtWidgets.QFrame(self.centralwidget)
         self.lcdNumber = QtWidgets.QLCDNumber(self.centralwidget)
         self.spinBox_3 = QtWidgets.QSpinBox(self.centralwidget)
@@ -153,18 +155,23 @@ class Ui_MainWindow(QtWidgets.QDialog):
         self.label = QtWidgets.QLabel(self.centralwidget)
         self.gridLayout = QtWidgets.QGridLayout(self.centralwidget)
         self.model = QtCore.QStringListModel()
-        self.completer = QtWidgets.QCompleter()
+        self.completer = QtWidgets.QCompleter(self.available, self.lineEdit)
         self.lineEdit_2 = QtWidgets.QLineEdit(self.centralwidget)
+        self.treeWidget = QtWidgets.QTreeWidget(self.centralwidget)
         self.line_2 = QtWidgets.QFrame(self.centralwidget)
+        self.item_0 = QtWidgets.QTreeWidgetItem(self.treeWidget)
+        self.item_1 = QtWidgets.QTreeWidgetItem(self.item_0)
         self.settings = QtCore.QSettings("ER4OR", "Today")
+        self.comboBox = QtWidgets.QComboBox(self.centralwidget)
+        self.label_5 = QtWidgets.QLabel(self.centralwidget)
         self.database = databaseThread()
-        self.available = []
 
     def setupUi(self, Window):
         Window.setObjectName("MainWindow")
         Window.resize(self.settings.value("Size", QtCore.QSize(1036, 391)))
         icon = QtGui.QIcon()
-        icon.addPixmap(QtGui.QPixmap("/images/orange.jpg"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon.addPixmap(QtGui.QPixmap("/images/orange.jpg"), QtGui.QIcon.Normal,
+                       QtGui.QIcon.Off)
         Window.setWindowIcon(icon)
         self.centralwidget.setObjectName("centralwidget")
         self.gridLayout.setObjectName("gridLayout")
@@ -194,10 +201,12 @@ class Ui_MainWindow(QtWidgets.QDialog):
         self.spinBox_3.setObjectName("spinBox_3")
         self.spinBox_3.setEnabled(False)
         self.gridLayout.addWidget(self.spinBox_3, 11, 1, 1, 1)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred,
+                                           QtWidgets.QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.lcdNumber.sizePolicy().hasHeightForWidth())
+        sizePolicy.setHeightForWidth(
+            self.lcdNumber.sizePolicy().hasHeightForWidth())
         self.lcdNumber.setSizePolicy(sizePolicy)
         self.lcdNumber.setMaximumSize(QtCore.QSize(16777215, 40))
         self.lcdNumber.setFrameShape(QtWidgets.QFrame.StyledPanel)
@@ -218,25 +227,28 @@ class Ui_MainWindow(QtWidgets.QDialog):
         self.radioButton.setMaximumSize(QtCore.QSize(130, 16777215))
         self.radioButton.setObjectName("radioButton")
         self.gridLayout.addWidget(self.radioButton, 15, 1, 1, 1)
-        self.listView.setObjectName("listView")
-        self.gridLayout.addWidget(self.listView, 7, 1, 1, 2)
         self.radioButton_2.setObjectName("radioButton_2")
         self.gridLayout.addWidget(self.radioButton_2, 15, 2, 1, 1)
         self.label_3.setObjectName("label_3")
         self.gridLayout.addWidget(self.label_3, 10, 1, 1, 1)
         self.radioButton_4.setObjectName("radioButton_4")
         self.gridLayout.addWidget(self.radioButton_4, 12, 1, 1, 1)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.MinimumExpanding,
+            QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.pushButton.sizePolicy().hasHeightForWidth())
+        sizePolicy.setHeightForWidth(
+            self.pushButton.sizePolicy().hasHeightForWidth())
         self.pushButton.setSizePolicy(sizePolicy)
         self.pushButton.setObjectName("pushButton")
         self.gridLayout.addWidget(self.pushButton, 21, 1, 1, 2)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred,
+                                           QtWidgets.QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.stackedWidget.sizePolicy().hasHeightForWidth())
+        sizePolicy.setHeightForWidth(
+            self.stackedWidget.sizePolicy().hasHeightForWidth())
         self.stackedWidget.setSizePolicy(sizePolicy)
         self.stackedWidget.setMaximumSize(QtCore.QSize(16777215, 16777215))
         self.stackedWidget.setObjectName("stackedWidget")
@@ -307,8 +319,38 @@ class Ui_MainWindow(QtWidgets.QDialog):
         self.menuThemes.addSeparator()
         self.menuThemes.addAction(self.actionDark)
         self.menuThemes.addAction(self.actionLight)
+        self.treeWidget.setAutoFillBackground(True)
+        self.treeWidget.setFrameShape(QtWidgets.QFrame.VLine)
+        self.treeWidget.setAlternatingRowColors(False)
+        self.treeWidget.setSelectionBehavior(
+            QtWidgets.QAbstractItemView.SelectRows)
+        self.treeWidget.setTextElideMode(QtCore.Qt.ElideNone)
+        self.treeWidget.setUniformRowHeights(False)
+        self.treeWidget.setAnimated(True)
+        self.treeWidget.setAllColumnsShowFocus(True)
+        self.treeWidget.setWordWrap(False)
+        self.treeWidget.setHeaderHidden(False)
+        self.treeWidget.setObjectName("treeWidget")
+        self.item_0 = QtWidgets.QTreeWidgetItem(self.treeWidget)
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 0))
+        brush.setStyle(QtCore.Qt.NoBrush)
+        self.item_1.setBackground(0, brush)
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 0))
+        brush.setStyle(QtCore.Qt.NoBrush)
+        self.item_1.setForeground(0, brush)
+        self.item_1.setToolTip(1, "")
+        self.treeWidget.header().setCascadingSectionResizes(False)
+        self.treeWidget.header().setHighlightSections(False)
+        self.gridLayout.addWidget(self.treeWidget, 4, 1, 1, 2)
+        self.label_5.setObjectName("label_5")
+        self.gridLayout.addWidget(self.label_5, 16, 1, 1, 1)
+        self.comboBox.setObjectName("comboBox")
+        self.comboBox.addItem("")
+        self.gridLayout.addWidget(self.comboBox, 16, 2, 1, 1)
+
         self.retranslateUi(Window)
         QtCore.QMetaObject.connectSlotsByName(Window)
+        MainWindow.setTabOrder(self.treeWidget, self.lineEdit)
         self.lineEdit_2.setCursorMoveStyle(QtCore.Qt.VisualMoveStyle)
         self.lineEdit_2.setClearButtonEnabled(True)
         self.lineEdit_2.setObjectName("lineEdit_2")
@@ -318,31 +360,43 @@ class Ui_MainWindow(QtWidgets.QDialog):
         self.line_2.setObjectName("line_2")
         self.gridLayout.addWidget(self.line_2, 0, 1, 1, 1)
         self.settings.beginGroup("main_window")
-        self.model.setStringList(self.available)
-        self.completer.setModel(self.model)
-        self.lineEdit.setCompleter(self.completer)
-        self.completer.setCompletionMode(self.completer.PopupCompletion)
+        self.fetchShowData()
 
     def retranslateUi(self, Window):
         _translate = QtCore.QCoreApplication.translate
         Window.setWindowTitle(_translate("MainWindow", "TodaytvSeries"))
         self.label.setText(_translate("MainWindow", "Season"))
         self.label_2.setText(_translate("MainWindow", "Episode"))
-        self.radioButton_5.setText(_translate("MainWindow", "From And To Specifics"))
-        self.lineEdit_2.setToolTip(_translate("MainWindow", "<html><head/><body><p>Search The Web</p></body></html>"))
+        self.radioButton_5.setText(
+            _translate("MainWindow", "From And To Specifics"))
+        self.lineEdit_2.setToolTip(_translate("MainWindow", "<html>"
+                                                            "<head/><body><p>"
+                                                            "Search The Web"
+                                                            "</p></body>"
+                                                            "</html>"))
         self.lineEdit.setPlaceholderText(_translate("MainWindow", "Search"))
-        self.lcdNumber.setToolTip(_translate("MainWindow", "<html><head/><body><p>Time Till Next "
-                                                           "Release</p></body></html>"))
+        self.lcdNumber.setToolTip(_translate("MainWindow", "<html>"
+                                                           "<head/><body><p>"
+                                                           "Time Till Next "
+                                                           "Release</p></body>"
+                                                           "</html>"))
         self.spinBox_3.setPrefix(_translate("MainWindow", "Season "))
         self.spinBox_4.setPrefix(_translate("MainWindow", "Episode "))
         self.label_4.setText(_translate("MainWindow", "Web Search Bar"))
-        self.radioButton_3.setText(_translate("MainWindow", "From Specific Episode (current season ONLY)"))
-        self.radioButton.setText(_translate("MainWindow", "From Specific Season"))
-        self.radioButton_2.setText(_translate("MainWindow", "From a Specific Point in the Series"))
+        self.radioButton_3.setText(
+            _translate("MainWindow", "From Specific Episode ("
+                                     "current season ONLY)"))
+        self.radioButton.setText(
+            _translate("MainWindow", "From Specific Season"))
+        self.radioButton_2.setText(
+            _translate("MainWindow", "From a Specific Point in the "
+                                     "Series"))
         self.label_3.setText(_translate("MainWindow", "To"))
-        self.radioButton_4.setText(_translate("MainWindow", "One Specific Episode"))
+        self.radioButton_4.setText(
+            _translate("MainWindow", "One Specific Episode"))
         self.pushButton.setText(_translate("MainWindow", "Send to IDM"))
-        self.textBrowser.setToolTip(_translate("MainWindow", "Current Episode"))
+        self.textBrowser.setToolTip(
+            _translate("MainWindow", "Current Episode"))
         self.menuFile.setTitle(_translate("MainWindow", "&File"))
         self.menuSettings.setTitle(_translate("MainWindow", "&Settings"))
         self.menuHelp.setTitle(_translate("MainWindow", "&Help"))
@@ -359,12 +413,51 @@ class Ui_MainWindow(QtWidgets.QDialog):
         self.actionAbout.setText(_translate("MainWindow", "About Developer"))
         self.actionVersion.setText(_translate("MainWindow", "Version"))
         self.actionQuit_2.setText(_translate("MainWindow", "Open"))
-        self.actionCheck_for_updates.setText(_translate("MainWindow", "Check for updates."))
+        self.actionCheck_for_updates.setText(
+            _translate("MainWindow", "Check for updates."))
         self.actionDark.setText(_translate("MainWindow", "Dark"))
         self.actionDark.triggered.connect(Dark_Theme)
         self.actionLight.setText(_translate("MainWindow", "Light"))
         self.actionLight.triggered.connect(Light_Theme)
-        self.lineEdit_2.setPlaceholderText(_translate("MainWindow", "Web Search"))
+        self.lineEdit_2.setPlaceholderText(
+            _translate("MainWindow", "Web Search"))
+        self.treeWidget.setSortingEnabled(True)
+        self.treeWidget.headerItem().setText(0, _translate("MainWindow",
+                                                           "Season/Episode"))
+        self.treeWidget.headerItem().setText(1,
+                                             _translate("MainWindow", "Name"))
+        self.treeWidget.headerItem().setText(2, _translate("MainWindow",
+                                                           "Added to List"))
+        self.treeWidget.headerItem().setText(3, _translate("MainWindow",
+                                                           "Available"))
+        __sortingEnabled = self.treeWidget.isSortingEnabled()
+        self.treeWidget.setSortingEnabled(False)
+        self.treeWidget.topLevelItem(0).setText(0, _translate("MainWindow",
+                                                              "Season 2"))
+        self.treeWidget.topLevelItem(0).setText(2, _translate("MainWindow",
+                                                              "5/13"))
+        self.treeWidget.topLevelItem(0).setText(3,
+                                                _translate("MainWindow", "7"))
+        self.treeWidget.topLevelItem(0).child(0).setText(0, _translate(
+            "MainWindow", "Episode 1"))
+        self.item_1.setToolTip(0, _translate("MainWindow", "rrr"))
+        self.treeWidget.topLevelItem(0).child(0).setText(1, _translate(
+            "MainWindow", "Sep"))
+        self.treeWidget.topLevelItem(0).child(0).setText(2, _translate(
+            "MainWindow", "Yes"))
+        self.treeWidget.topLevelItem(0).child(0).setText(3, _translate(
+            "MainWindow", "Yes"))
+        self.treeWidget.topLevelItem(1).setText(0, _translate("MainWindow",
+                                                              "Season 1"))
+        self.treeWidget.topLevelItem(1).setText(1, _translate("MainWindow",
+                                                              "ooi"))
+        self.treeWidget.topLevelItem(1).setText(2, _translate("MainWindow",
+                                                              "10/10"))
+        self.treeWidget.topLevelItem(1).setText(3,
+                                                _translate("MainWindow", "10"))
+        self.treeWidget.setSortingEnabled(__sortingEnabled)
+        self.label_5.setText(_translate("MainWindow", "Extras"))
+        self.comboBox.setItemText(0, _translate("MainWindow", "None"))
         self.actionPreferences.triggered.connect(lambda: self.preferences())
         self.lineEdit_2.returnPressed.connect(lambda: self.web())
         self.radioButton.clicked.connect(lambda: self.check())
@@ -372,7 +465,6 @@ class Ui_MainWindow(QtWidgets.QDialog):
         self.radioButton_3.clicked.connect(lambda: self.check())
         self.radioButton_4.clicked.connect(lambda: self.check())
         self.radioButton_5.clicked.connect(lambda: self.check())
-        self.lineEdit.textChanged.connect(lambda: self.databaseShow(self.lineEdit.text()))
 
     # FEATURES
 
@@ -394,17 +486,13 @@ class Ui_MainWindow(QtWidgets.QDialog):
             self.spinBox_4.setEnabled(False)
             self.spinBox_3.setEnabled(False)
 
-    def databaseShow(self, text):
-        self.available = []
-        with sqlite3.connect(r"E:\Project Files\Projects\Python\Today\TodayTvseries.db") as connection:
-            cursor = connection.cursor()
-            cursor.execute('SELECT m.Name FROM main m WHERE m.Name LIKE "%{}%"'.format(text))
-            available_tip = cursor.fetchall()
-            for i in available_tip:
-                self.available.append(i[0])
+    def fetchShowData(self):
+        self.sig1.connect(self.database.sourceData4)
+        self.sig1.emit(4)
+        self.database.start()
+        self.database.sig.connect(self.UseShowData)
 
-    # TODO: Find another Completer system
-    def availableShow(self, available):
+    def UseShowData(self, available):
         self.model.setStringList(available)
         self.completer.setModel(self.model)
         self.lineEdit.setCompleter(self.completer)
@@ -450,7 +538,8 @@ class Ui_Dialog(QtWidgets.QDialog):
         self.label.setObjectName("label")
         self.gridLayout.addWidget(self.label, 3, 1, 1, 1)
         self.lineEdit.setMaximumSize(QtCore.QSize(13777215, 16777215))
-        self.lineEdit.setAlignment(QtCore.Qt.AlignLeading | QtCore.Qt.AlignLeft | QtCore.Qt.AlignTop)
+        self.lineEdit.setAlignment(
+            QtCore.Qt.AlignLeading | QtCore.Qt.AlignLeft | QtCore.Qt.AlignTop)
         self.lineEdit.setObjectName("lineEdit")
         self.gridLayout.addWidget(self.lineEdit, 3, 2, 1, 1)
         self.lineEdit_2.setMaximumSize(QtCore.QSize(16777215, 16777215))
@@ -495,7 +584,8 @@ class Ui_Dialog(QtWidgets.QDialog):
         self.tabWidget.addTab(self.tab_2, "")
         self.horizontalLayout.addWidget(self.tabWidget)
         self.buttonBox.setOrientation(QtCore.Qt.Vertical)
-        self.buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.Ok)
+        self.buttonBox.setStandardButtons(
+            QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.Ok)
         self.buttonBox.setObjectName("buttonBox")
         self.horizontalLayout.addWidget(self.buttonBox)
 
@@ -517,9 +607,11 @@ class Ui_Dialog(QtWidgets.QDialog):
         self.label_2.setText(_translate("Dialog", "IDM Save Directory"))
         self.label_3.setText(_translate("Dialog", "IDM UUID"))
         self.toolButton.setText(_translate("Dialog", "..."))
-        self.label_7.setText(_translate("Dialog", "PostData"))
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab), _translate("Dialog", "IDM"))
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_2), _translate("Dialog", "Tab 2"))
+        self.label_7.setText(_translate("Dialog", "Post Data"))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab),
+                                  _translate("Dialog", "IDM Data"))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_2),
+                                  _translate("Dialog", "Advanced"))
         self.toolButton.clicked.connect(lambda: self.browse("Save Location"))
         self.lineEdit.setText(self.settings.value('settings/Cookie'))
         self.lineEdit_2.setText(iDM())
@@ -528,14 +620,19 @@ class Ui_Dialog(QtWidgets.QDialog):
         self.lineEdit_5.setText(self.settings.value('settings/Password'))
         self.lineEdit_6.setText(self.settings.value('settings/Referrer'))
         self.lineEdit_7.setText(self.settings.value('settings/PostData'))
-        self.lineEdit.returnPressed.connect(lambda: self.lineEdit.setText(self.lineEdit.text()))
+        self.lineEdit.returnPressed.connect(
+            lambda: self.lineEdit.setText(self.lineEdit.text()))
         self.pushButton.clicked.connect(lambda: self.save())
 
     # FEATURES
 
     def browse(self, saver):
-        options = QtWidgets.QFileDialog.DontResolveSymlinks | QtWidgets.QFileDialog.ShowDirsOnly
-        directory = QtWidgets.QFileDialog.getExistingDirectory(self, saver, self.lineEdit_3.text(),
+        option1 = QtWidgets.QFileDialog.DontResolveSymlinks
+        option2 = QtWidgets.QFileDialog.ShowDirsOnly
+        options = option1 | option2
+        display_line = self.lineEdit_3.text()
+        directory = QtWidgets.QFileDialog.getExistingDirectory(self, saver,
+                                                               display_line,
                                                                options=options)
         if directory:
             self.lineEdit_3.setText(directory)
@@ -554,19 +651,21 @@ class Ui_Web(QtWidgets.QDialog):
     sig1 = pyqtSignal(int, str)
     sig2 = pyqtSignal(str, str)
     sig3 = pyqtSignal(int, dict)
-    sig4 = pyqtSignal(int, list, list, list)
+    sig4 = pyqtSignal(int, list, list, list, str)
 
     def __init__(self, parent=None):
         super(Ui_Web, self).__init__(parent)
-        self.thread = queryThread()
-        self.thread1 = todayDownloadThread()
+        self.thread = TvShowThread()
+        self.thread1 = TodayDownloadThread()
         self.database = databaseThread()
         self.scrollAreaWidgetContents_2 = QtWidgets.QWidget()
         self.comboBox = QtWidgets.QComboBox(Web)
         self.gridLayout = QtWidgets.QGridLayout(Web)
         self.scrollArea = QtWidgets.QScrollArea(Web)
-        self.textBrowser = QtWidgets.QTextBrowser(self.scrollAreaWidgetContents_2)
-        self.gridLayout_2 = QtWidgets.QGridLayout(self.scrollAreaWidgetContents_2)
+        self.textBrowser = QtWidgets.QTextBrowser(
+            self.scrollAreaWidgetContents_2)
+        self.gridLayout_2 = QtWidgets.QGridLayout(
+            self.scrollAreaWidgetContents_2)
         self.frame = QtWidgets.QFrame(self.scrollAreaWidgetContents_2)
         self.lineEdit = QtWidgets.QLineEdit(Web)
         self.pushButton_2 = QtWidgets.QPushButton(Web)
@@ -581,30 +680,38 @@ class Ui_Web(QtWidgets.QDialog):
         self.gridLayout.setContentsMargins(11, 11, 11, 11)
         self.gridLayout.setSpacing(6)
         self.gridLayout.setObjectName("gridLayout")
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum,
+                                           QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.comboBox.sizePolicy().hasHeightForWidth())
+        sizePolicy.setHeightForWidth(
+            self.comboBox.sizePolicy().hasHeightForWidth())
         self.comboBox.setSizePolicy(sizePolicy)
         self.comboBox.setMaximumSize(QtCore.QSize(300, 16777215))
         self.comboBox.setObjectName("comboBox")
         self.gridLayout.addWidget(self.comboBox, 2, 0, 1, 1)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred,
+                                           QtWidgets.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.scrollArea.sizePolicy().hasHeightForWidth())
+        sizePolicy.setHeightForWidth(
+            self.scrollArea.sizePolicy().hasHeightForWidth())
         self.scrollArea.setSizePolicy(sizePolicy)
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setObjectName("scrollArea")
-        self.scrollAreaWidgetContents_2.setGeometry(QtCore.QRect(0, 0, 528, 178))
-        self.scrollAreaWidgetContents_2.setObjectName("scrollAreaWidgetContents_2")
+        self.scrollAreaWidgetContents_2.setGeometry(
+            QtCore.QRect(0, 0, 528, 178))
+        self.scrollAreaWidgetContents_2.setObjectName(
+            "scrollAreaWidgetContents_2")
         self.gridLayout_2.setContentsMargins(11, 11, 11, 11)
         self.gridLayout_2.setSpacing(6)
         self.gridLayout_2.setObjectName("gridLayout_2")
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred,
+                                           QtWidgets.QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.textBrowser.sizePolicy().hasHeightForWidth())
+        sizePolicy.setHeightForWidth(
+            self.textBrowser.sizePolicy().hasHeightForWidth())
         self.textBrowser.setSizePolicy(sizePolicy)
         self.textBrowser.setAutoFillBackground(True)
         self.textBrowser.setFrameShape(QtWidgets.QFrame.NoFrame)
@@ -620,13 +727,16 @@ class Ui_Web(QtWidgets.QDialog):
         self.gridLayout_2.addWidget(self.frame, 0, 1, 1, 1)
         self.scrollArea.setWidget(self.scrollAreaWidgetContents_2)
         self.gridLayout.addWidget(self.scrollArea, 3, 0, 1, 3)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum,
+                                           QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.spinBox.sizePolicy().hasHeightForWidth())
+        sizePolicy.setHeightForWidth(
+            self.spinBox.sizePolicy().hasHeightForWidth())
         self.spinBox.setSizePolicy(sizePolicy)
         self.spinBox.setMaximumSize(QtCore.QSize(100, 16777215))
-        self.spinBox.setCorrectionMode(QtWidgets.QAbstractSpinBox.CorrectToPreviousValue)
+        self.spinBox.setCorrectionMode(
+            QtWidgets.QAbstractSpinBox.CorrectToPreviousValue)
         self.spinBox.setSuffix("")
         self.spinBox.setPrefix("")
         self.spinBox.setMinimum(1)
@@ -643,7 +753,6 @@ class Ui_Web(QtWidgets.QDialog):
         self.pushButton.setObjectName("pushButton")
         self.gridLayout.addWidget(self.pushButton, 4, 0, 1, 2)
         self.pushButton.setEnabled(False)
-
         self.retranslateUi(Webs)
         QtCore.QMetaObject.connectSlotsByName(Webs)
 
@@ -654,8 +763,10 @@ class Ui_Web(QtWidgets.QDialog):
         self.pushButton_2.setText(_translate("Web", "Search"))
         self.lineEdit.setPlaceholderText(_translate("Web", "Web Search"))
         self.pushButton.setText(_translate("Web", "ADD SHOW"))
-        self.pushButton_2.clicked.connect(lambda: self.get_search_web_data(self.lineEdit.text()))
-        self.lineEdit.returnPressed.connect(lambda: self.get_search_web_data(self.lineEdit.text()))
+        self.pushButton_2.clicked.connect(
+            lambda: self.get_search_web_data(self.lineEdit.text()))
+        self.lineEdit.returnPressed.connect(
+            lambda: self.get_search_web_data(self.lineEdit.text()))
         self.comboBox.currentIndexChanged.connect(self.comboSummary)
         self.pushButton.clicked.connect(lambda: self.Show())
 
@@ -674,11 +785,14 @@ class Ui_Web(QtWidgets.QDialog):
     def error_Duplicates(self, result, error, i):
         critical = QtWidgets.QMessageBox()
         self.comboBox.clear()
+
         if i == 0:
+            # TODO: Stop repetitious error messages
             critical.setIcon(QtWidgets.QMessageBox.Critical)
             critical.setText(f" SERVER DOWN, can't maintain connection.\n"
                              f"\n"
-                             f"Site Might be under maintenance or blocked ip or\n"
+                             f"Site Might be under maintenance or blocked ip "
+                             f"or\n "
                              f"unavailable internet connection..\n"
                              f"\n"
                              f"\n"
@@ -689,17 +803,20 @@ class Ui_Web(QtWidgets.QDialog):
             critical.setDefaultButton(QtWidgets.QMessageBox.Ok)
             critical.setEscapeButton(QtWidgets.QMessageBox.Cancel)
             critical.exec_()
+
         elif i == 1:
             self.sig3.connect(self.database.sourceData)
             self.sig3.emit(i, result)
             self.database.start()
-            self.database.sig.connect(self.add_Combo)
+            self.database.sig2.connect(self.add_Combo)
             self.pushButton.setEnabled(True)
+
         self.pushButton_2.setEnabled(True)
         self.lineEdit.setEnabled(True)
 
     # Combobox Data
-    def add_Combo(self, items):
+    def add_Combo(self, items, results):
+        self.results = results
         for title in items:
             self.comboBox.addItem(title)
 
@@ -721,16 +838,20 @@ class Ui_Web(QtWidgets.QDialog):
         self.sig2.connect(self.thread1.sourceData)
         self.sig2.emit(link, self.comboBox.currentText())
         self.thread1.start()
-        self.thread1.sig.connect(self.addShowData)
+        self.thread1.sign.connect(self.addShowData)
         self.comboBox.clear()
 
-    def addShowData(self, episode_number, size_in_mb, episode_link, error, i):
+    def addShowData(self, title, episode_number, size_in_mb, episode_link,
+                    error, i):
         critical = QtWidgets.QMessageBox()
-        if i == 1:
+
+        if i == 0:
             critical.setIcon(QtWidgets.QMessageBox.Critical)
-            critical.setText(f" SERVER DOWN, can't maintain connection.\n"
+            critical.setText(f"Adding process could'nt be completed due to "
+                             f"network issues\n "
                              f"\n"
-                             f"Site Might be under maintenance or blocked ip or\n"
+                             f"Site Might be under maintenance or blocked ip "
+                             f"or\n "
                              f"unavailable internet connection..\n"
                              f"\n"
                              f"\n"
@@ -741,14 +862,18 @@ class Ui_Web(QtWidgets.QDialog):
             critical.setDefaultButton(QtWidgets.QMessageBox.Ok)
             critical.setEscapeButton(QtWidgets.QMessageBox.Cancel)
             critical.exec_()
+
+            self.database.deleteLastRow()
+            self.database.start()
+
         elif i == 3:
             self.sig4.connect(self.database.sourceData3)
-            self.sig4.emit(i, episode_number, size_in_mb, episode_link)
+            self.sig4.emit(i, episode_number, size_in_mb, episode_link, title)
             self.database.start()
 
 
 # BACKGROUND PROCESSING FOR FASTER RESULTS "Reduces Lags"
-class queryThread(QtCore.QThread):
+class TvShowThread(QtCore.QThread):
     """docstring for  download_thread
     This is a background process thread for the phase one downloads
 
@@ -759,7 +884,7 @@ class queryThread(QtCore.QThread):
     sig = pyqtSignal(dict, str, int)
 
     def __init__(self):
-        super(queryThread, self).__init__()
+        super(TvShowThread, self).__init__()
         self.search = ""
         self.limits = 0
 
@@ -773,12 +898,14 @@ class queryThread(QtCore.QThread):
         results = {}
         check = True
         tv_maze = "http://api.tvmaze.com/"
+
         try:
             html = requests.get(
-                f"""http://www.todaytvseries2.com/search-series?searchword={self.search}&searchphrase
-                =all&limit={self.limits}""")
+                f"""http://www.todaytvseries2.com/search-series?searchword={
+                self.search}&searchphrase=all&limit={self.limits}""")
             soup = BeautifulSoup(html.text, "html.parser")
             online = html.ok
+
         except Exception as exc:
             online = False
             err = str(exc)
@@ -786,39 +913,48 @@ class queryThread(QtCore.QThread):
 
         if online:
             search_result = soup.select('.uk-article-titletag a')
+
             for result in search_result:
                 title = result.get('title')
                 link = 'http://www.todaytvseries2.com' + result.get('href')
+
                 try:
-                    json_search = requests.get(tv_maze + "search/shows?q=" + title)
+                    json_search = requests.get(
+                        tv_maze + "search/shows?q=" + title)
                     resulted = json.loads(json_search.text)
+
                     if len(resulted) > 0:
-                        results.update({title: {'Link': link}})
-                        results[title]['summary'] = resulted[0]['show']['summary']
-                        results[title]['Maze_Name'] = resulted[0]['show']['name']
-                        results[title]['status'] = resulted[0]['show']['status']
-                        results[title]['schedule'] = resulted[0]['show']['schedule']
-                        results[title]['ID'] = resulted[0]['show']['id']
-                        results[title]['index'] = int
+                        # first_result: Assuming it's the same one
+                        first_result = resulted[0]['show']
+                        results = {title: {
+                            'Link': link,
+                            'summary': first_result['summary'],
+                            'Maze_Name': first_result['name'],
+                            'status': first_result['status'],
+                            'schedule': first_result['schedule'],
+                            'ID': first_result['id'], 'index': -1
+                        }}
+
                 except Exception as exc:
                     check = False
                     err = str(exc)
                     break
+
         if check:
             self.sig.emit(results, err, 1)
         else:
             self.sig.emit(results, err, 0)
 
 
-class todayDownloadThread(QtCore.QThread):
+class TodayDownloadThread(QtCore.QThread):
     """docstring for download_threadToday
     Downloads the Individual Episode Links and forwards it onto a database """
 
     link: str
-    sign = pyqtSignal(str, int)
+    sign = pyqtSignal(str, list, list, list, str, int)
 
     def __init__(self):
-        super(todayDownloadThread, self).__init__()
+        super(TodayDownloadThread, self).__init__()
         self.Link = ''
         self.Title = ''
 
@@ -851,17 +987,19 @@ class todayDownloadThread(QtCore.QThread):
             size_in_mb.reverse()
             episode_link.reverse()
 
-        # TODO: Clear Database Write error as it can't be called from a thread.
         if check:
-            self.sign.emit(episode_number, size_in_mb, episode_link, error, 3)
+            self.sign.emit(self.Title, episode_number, size_in_mb,
+                           episode_link, error, 3)
         else:
-            self.sign.emit(episode_number, size_in_mb, episode_link, error, 0)
+            self.sign.emit('', episode_number, size_in_mb, episode_link, error,
+                           0)
 
 
 class databaseThread(QtCore.QThread):
     """docstring for databaseThread"""
     sig = pyqtSignal(list)
     sig1 = pyqtSignal(str)
+    sig2 = pyqtSignal(list, dict)
 
     def __init__(self):
         super(databaseThread, self).__init__()
@@ -871,6 +1009,7 @@ class databaseThread(QtCore.QThread):
         self.Episode = []
         self.Size = []
         self.Link = []
+        self.Title = ""
 
     def sourceData(self, number, result):
         self.Result = result
@@ -880,11 +1019,19 @@ class databaseThread(QtCore.QThread):
         self.Show = show
         self.Number = number
 
-    def sourceData3(self, number, episode_number, size_in_mb, episode_link):
+    def sourceData3(self, number, episode_number, size_in_mb, episode_link,
+                    title):
+        self.Title = title
         self.Episode = episode_number
         self.Size = size_in_mb
         self.Link = episode_link
         self.Number = number
+
+    def sourceData4(self, number):
+        self.Number = number
+
+    def deleteLastRow(self):
+        self.Number = 5
 
     def run(self):
         db = QtSql.QSqlDatabase.addDatabase('QSQLITE')
@@ -899,7 +1046,8 @@ class databaseThread(QtCore.QThread):
             index = 0
             items = []
             for title in self.Result:
-                resulted.setQuery('SELECT m.Maze_ID FROM  main m WHERE m.Name = "{}";'.format(title))
+                resulted.setQuery('SELECT tv.[Maze ID] FROM  TvMaze tv WHERE '
+                                  'tv.Name = "{}";'.format(title))
                 available = resulted.record(0).value("Maze_ID")
                 if available is None:
                     items.append(title)
@@ -910,28 +1058,38 @@ class databaseThread(QtCore.QThread):
                     self.Result[title]['index'] = index
                     index += 1
             db.close()
-            self.sig.emit(items)
+            self.sig2.emit(items, self.Result)
 
         elif self.Number == 2:
             link = ''
             for title in self.Result:
                 if title == self.Show:
-                    query.exec_(''' CREATE TABLE IF NOT EXISTS "main" (
-                                            "ID"    INTEGER,
-                                            "Name"  TEXT,
-                                            "Link"  TEXT,
-                                            "Last Episode"  TEXT,
-                                            "Database Episode"  TEXT,
-                                            "Schedule"  TEXT,
-                                            "Description"   TEXT,
-                                            "Image" TEXT,
-                                            "Local Image"   TEXT,
-                                            "Running"   BLOB,
-                                            "Day"   TEXT,
-                                            "Maze_ID" INTEGER UNIQUE,
-                                            "Maze_Name" TEXT,
-                                            PRIMARY KEY("ID")
-                                        );''')
+
+                    query.exec_('''CREATE TABLE IF NOT EXISTS Todaytvseries (
+                                    ID                 INTEGER,
+                                    Name               VARCHAR,
+                                    Link               VARCHAR UNIQUE,
+                                    [Database Episode] VARCHAR DEFAULT S0E0,
+                                    PRIMARY KEY (
+                                        ID
+                                    )
+                                    );''')
+
+                    query.exec_(''' CREATE TABLE IF NOT EXISTS TvMaze (
+                                        ID             INTEGER,
+                                        Name           VARCHAR,
+                                        [Last Episode] VARCHAR,
+                                        Schedule       TIME,
+                                        Description    VARCHAR,
+                                        Image          VARCHAR,
+                                        Running        BOOLEAN,
+                                        Day            VARCHAR,
+                                        [Maze ID]      INTEGER,
+                                        PRIMARY KEY (
+                                            ID
+                                        )
+                                    );''')
+
                     if self.Result[title]["status"] == "Running":
                         running = True
                     else:
@@ -943,18 +1101,44 @@ class databaseThread(QtCore.QThread):
                     maze_id = self.Result[title]['ID']
                     name = self.Result[title]['Maze_Name']
 
-                    query.prepare('''INSERT INTO "main"(Name, Link, "Last Episode",
-                                    "Database Episode", Schedule, Description,
-                                    Image, "Local Image", Running, Day, Maze_ID, Maze_Name)
-                                    VALUES(:Name, :Link,
-                                    :Last_Episode,:Database_Episode,
-                                    :Schedule, :Description, :Image, :Local_Image,
-                                    :Running, :Day, :Maze_ID, :Maze_Name);''')
+                    query.prepare('''INSERT INTO Todaytvseries (
+                                                                    Name,
+                                                                    Link
+                                                                )
+                                                                VALUES (
+                                                                    :Name,
+                                                                    :Link
+                                                                );''')
 
                     query.bindValue(":Name", title)
                     query.bindValue(":Link", link)
+                    query.exec_()
+
+                    query.prepare('''INSERT INTO TvMaze (
+                                                            Name,
+                                                            [Last Episode],
+                                                            Schedule,
+                                                            Description,
+                                                            Image,
+                                                            [Local Image],
+                                                            Running,
+                                                            Day,
+                                                            [Maze ID]
+                                                        )
+                                                        VALUES (
+                                                            :Name,
+                                                            :Last_Episode,
+                                                            :Schedule,
+                                                            :Description,
+                                                            :Image,
+                                                            :Local_Image,
+                                                            :Running,
+                                                            :Day,
+                                                            :Maze_ID
+                                                        );''')
+
+                    query.bindValue(":Name", name)
                     query.bindValue(":Last_Episode", "0")
-                    query.bindValue(":Database_Episode", "0")
                     query.bindValue(":Schedule", schedule)
                     query.bindValue(":Description", description)
                     query.bindValue(":Image", "0")
@@ -962,7 +1146,6 @@ class databaseThread(QtCore.QThread):
                     query.bindValue(":Running", running)
                     query.bindValue(":Day", day)
                     query.bindValue(":Maze_ID", maze_id)
-                    query.bindValue(":Maze_Name", name)
                     query.exec_()
                     break
             db.commit()
@@ -970,24 +1153,68 @@ class databaseThread(QtCore.QThread):
             self.sig1.emit(link)
 
         elif self.Number == 3:
-            series = """CREATE TABLE IF NOT EXISTS "{}" (
-                                            "ID"    INTEGER,
-                                            "Episode"   TEXT NOT NULL,
-                                            "Size"  TEXT NOT NULL,
-                                            "Link"  INTEGER NOT NULL UNIQUE,
-                                            PRIMARY KEY("ID")
-                                        );""".format(self.Title)
+            default = "0"
+            series = """CREATE TABLE IF NOT EXISTS {} (
+                            ID      INTEGER,
+                            Episode VARCHAR    NOT NULL,
+                            Size    VARCHAR    NOT NULL,
+                            Link    VARCHAR    NOT NULL
+                                            UNIQUE,
+                            PRIMARY KEY (
+                                ID
+                            )
+                        );""".format(self.Title)
+
             query.exec_(series)
 
             for number, mb, urls in zip(self.Episode, self.Size, self.Link):
-                query.prepare('''INSERT INTO "{}" (Episode, Size, Link)
-                                VALUES(:Episode, :Size, :Link);'''.format(self.Title))
+                query.prepare('''INSERT INTO {} (
+                                                   Episode,
+                                                   Size,
+                                                   Link
+                                                )
+                                                VALUES (
+                                                   :Episode,
+                                                   :Size,
+                                                   :Link
+                                                );'''.format(self.Title))
 
                 query.bindValue(":Episode", number.getText())
                 query.bindValue(":Size", mb.getText())
                 query.bindValue(":Link", urls.get('href'))
                 query.exec_()
 
+                default = number.getText()
+
+            if not os.path.exists('ShowData.json'):
+                with open('ShowData.json', 'w+') as handle:
+                    json.dump(self.Result, handle)
+
+            query.prepare(f'''UPDATE Todaytvseries
+                                 SET [Database Episode] = :Database_Episode
+                               WHERE Name = "{self.Title}";''')
+
+            query.bindValue(":Database_Episode", default)
+            query.exec_()
+
+            db.commit()
+            db.close()
+
+        elif self.Number == 4:
+            resulted.setQuery('SELECT tv.Name FROM Todaytvseries tv')
+            available = []
+            i = 0
+
+            while resulted.record(i).value("Name") is not None:
+                available.append(resulted.record(i).value("Name"))
+                i += 1
+
+            db.close()
+            self.sig.emit(available)
+
+        elif self.Number == 5:
+            query.exec_('DELETE FROM Todaytvseries WHERE ID = MAX(ID)')
+            query.exec_('DELETE FROM TvMaze WHERE ID = MAX(ID)')
             db.commit()
             db.close()
 
@@ -997,7 +1224,6 @@ if __name__ == "__main__":
     import json
     import os
     import winreg
-    import sqlite3
     import requests
     from bs4 import BeautifulSoup
 
