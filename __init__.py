@@ -28,22 +28,22 @@ def Settings(theme=False):
     # TODO: Change into a QSetting enable
     default = {'Theme': []}
     default['Theme'].append({"Dark": False})
-    if not os.path.exists('settings.JSON'):
-        with open('settings.JSON', 'w+') as handle:
+    if not os.path.exists('settings.json'):
+        with open('settings.json', 'w+') as handle:
             json.dump(default, handle)
     else:
-        with open('settings.JSON', 'r') as read:
+        with open('settings.json', 'r') as read:
             reads = json.load(read)
             valid = reads['Theme'][0]['Dark']
         if not valid == theme:
-            with open('settings.JSON', 'w+') as handle:
+            with open('settings.json', 'w+') as handle:
                 default['Theme'][0]['Dark'] = theme
                 json.dump(default, handle)
 
 
 def Theme():
-    if os.path.exists('settings.JSON'):
-        with open('settings.JSON', 'r') as read:
+    if os.path.exists('settings.json'):
+        with open('settings.json', 'r') as read:
             reads = json.load(read)
             valid = reads['Theme'][0]['Dark']
         if valid is True:
@@ -164,7 +164,7 @@ class Ui_MainWindow(QtWidgets.QDialog):
         self.settings = QtCore.QSettings("ER4OR", "Today")
         self.comboBox = QtWidgets.QComboBox(self.centralwidget)
         self.label_5 = QtWidgets.QLabel(self.centralwidget)
-        self.database = databaseThread()
+        self.database = DatabaseThread()
 
     def setupUi(self, Window):
         Window.setObjectName("MainWindow")
@@ -487,7 +487,7 @@ class Ui_MainWindow(QtWidgets.QDialog):
             self.spinBox_3.setEnabled(False)
 
     def fetchShowData(self):
-        self.sig1.connect(self.database.sourceData4)
+        self.sig1.connect(self.database.source_data4)
         self.sig1.emit(4)
         self.database.start()
         self.database.sig.connect(self.UseShowData)
@@ -655,9 +655,9 @@ class Ui_Web(QtWidgets.QDialog):
 
     def __init__(self, parent=None):
         super(Ui_Web, self).__init__(parent)
-        self.thread = TvShowThread()
-        self.thread1 = TodayDownloadThread()
-        self.database = databaseThread()
+        self.seriesInfo = TvShowInfo()
+        self.thread1 = TvShowData()
+        self.database = DatabaseThread()
         self.scrollAreaWidgetContents_2 = QtWidgets.QWidget()
         self.comboBox = QtWidgets.QComboBox(Web)
         self.gridLayout = QtWidgets.QGridLayout(Web)
@@ -777,10 +777,10 @@ class Ui_Web(QtWidgets.QDialog):
         self.pushButton_2.setEnabled(False)
         self.lineEdit.setEnabled(False)
         self.lineEdit.setText(search)
-        self.sig1.connect(self.thread.source_data)
+        self.sig1.connect(self.seriesInfo.source_data)
         self.sig1.emit(self.spinBox.value(), search)
-        self.thread.start()
-        self.thread.sig.connect(self.error_Duplicates)
+        self.seriesInfo.start()
+        self.seriesInfo.tvSignal.connect(self.error_Duplicates)
 
     def error_Duplicates(self, result, error, i):
         critical = QtWidgets.QMessageBox()
@@ -805,7 +805,7 @@ class Ui_Web(QtWidgets.QDialog):
             critical.exec_()
 
         elif i == 1:
-            self.sig3.connect(self.database.sourceData)
+            self.sig3.connect(self.database.get_available_shows)
             self.sig3.emit(i, result)
             self.database.start()
             self.database.sig2.connect(self.add_Combo)
@@ -829,20 +829,19 @@ class Ui_Web(QtWidgets.QDialog):
     def Show(self):
         self.pushButton.setEnabled(False)
         self.textBrowser.clear()
-        self.sig1.connect(self.database.sourceData2)
+        self.sig1.connect(self.database.source_data2)
         self.sig1.emit(2, self.comboBox.currentText())
         self.database.start()
         self.database.sig1.connect(self.getShowData)
 
     def getShowData(self, link):
-        self.sig2.connect(self.thread1.sourceData)
+        self.sig2.connect(self.thread1.source_data)
         self.sig2.emit(link, self.comboBox.currentText())
         self.thread1.start()
         self.thread1.sign.connect(self.addShowData)
         self.comboBox.clear()
 
-    def addShowData(self, title, episode_number, size_in_mb, episode_link,
-                    error, i):
+    def addShowData(self, title, result, error, i):
         critical = QtWidgets.QMessageBox()
 
         if i == 0:
@@ -863,112 +862,118 @@ class Ui_Web(QtWidgets.QDialog):
             critical.setEscapeButton(QtWidgets.QMessageBox.Cancel)
             critical.exec_()
 
-            self.database.deleteLastRow()
+            self.database.delete_last_row()
             self.database.start()
 
         elif i == 3:
-            self.sig4.connect(self.database.sourceData3)
-            self.sig4.emit(i, episode_number, size_in_mb, episode_link, title)
+            self.sig4.connect(self.database.source_data3)
+            self.sig4.emit(i, result, title)
             self.database.start()
 
 
 # BACKGROUND PROCESSING FOR FASTER RESULTS "Reduces Lags"
-class TvShowThread(QtCore.QThread):
-    """docstring for  download_thread
-    This is a background process thread for the phase one downloads
-
-    searches data on TodayTvSeries and tv maze for additional data
-    Emits Result data from a dict format for processing
+class TvShowInfo(QtCore.QThread):
+    """TvShowInfo:
+    This is a background process thread for the phase one fetch,
+    Searches data on TodayTvSeries and tv maze for additional data
+    then extracts relevant data from both sites then it
+    Emits Result data signal from a dict format for processing
     """
+    limits: int
     search: str
-    sig = pyqtSignal(dict, str, int)
+    tvSignal = pyqtSignal(dict, str, int)
 
     def __init__(self):
-        super(TvShowThread, self).__init__()
+        super(TvShowInfo, self).__init__()
         self.search = ""
         self.limits = 0
 
-    def source_data(self, limit, source):
+    def source_data(self, limit: int, source: str):
         self.search = source
         self.limits = limit
 
     def run(self):
-        err = ''
+        error = ''
         soup = ""
         results = {}
-        check = True
+        has_error = False
         tv_maze = "http://api.tvmaze.com/"
+        today_tv = "http://www.todaytvseries2.com/"
 
         try:
-            html = requests.get(
-                f"""http://www.todaytvseries2.com/search-series?searchword={
-                self.search}&searchphrase=all&limit={self.limits}""")
-            soup = BeautifulSoup(html.text, "html.parser")
-            online = html.ok
+            tv_series_html = requests.get(
+                f"{today_tv}search-series?searchword="
+                f"{self.search}&searchphrase=all&limit={self.limits}"
+            )
+            soup = BeautifulSoup(tv_series_html.text, "html.parser")
+            online = tv_series_html.ok
 
         except Exception as exc:
             online = False
-            err = str(exc)
-            check = False
+            error = str(exc)
+            has_error = True
 
         if online:
-            search_result = soup.select('.uk-article-titletag a')
+            tags = soup.select('.uk-article-titletag a')
 
-            for result in search_result:
-                title = result.get('title')
-                link = 'http://www.todaytvseries2.com' + result.get('href')
+            for tag in tags:
+                title = tag.get('title')
+                link = today_tv + tag.get('href')
 
                 try:
-                    json_search = requests.get(
-                        tv_maze + "search/shows?q=" + title)
-                    resulted = json.loads(json_search.text)
+                    tv_maze_search = requests.get(
+                        tv_maze + "search/shows?q=" + title
+                    )
+                    api_results = json.loads(tv_maze_search.text)
 
-                    if len(resulted) > 0:
-                        # first_result: Assuming it's the same one
-                        first_result = resulted[0]['show']
-                        results = {title: {
-                            'Link': link,
-                            'summary': first_result['summary'],
-                            'Maze_Name': first_result['name'],
-                            'status': first_result['status'],
-                            'schedule': first_result['schedule'],
-                            'ID': first_result['id'], 'index': -1
-                        }}
+                    if len(api_results) > 0:
+                        # TODO: kill assumption on first_result var
+
+                        first_result = api_results[0]['show']
+                        results.update({
+                            title: {'Link': link,
+                                    'summary': first_result['summary'],
+                                    'Maze_Name': first_result['name'],
+                                    'status': first_result['status'],
+                                    'schedule': first_result['schedule'],
+                                    'ID': first_result['id'],
+                                    'index': -1
+                                    }})
 
                 except Exception as exc:
-                    check = False
-                    err = str(exc)
+                    has_error = True
+                    error = str(exc)
                     break
 
-        if check:
-            self.sig.emit(results, err, 1)
+        if has_error:
+            self.tvSignal.emit(results, error, 0)
         else:
-            self.sig.emit(results, err, 0)
+            self.tvSignal.emit(results, error, 1)
 
 
-class TodayDownloadThread(QtCore.QThread):
-    """docstring for download_threadToday
-    Downloads the Individual Episode Links and forwards it onto a database """
+class TvShowData(QtCore.QThread):
+    """TvShowData:
+    This is a background process thread for the phase two fetch,
+    this process"""
 
-    link: str
-    sign = pyqtSignal(str, list, list, list, str, int)
+    sign = pyqtSignal(str, dict, str, int)
 
     def __init__(self):
-        super(TodayDownloadThread, self).__init__()
+        super(TvShowData, self).__init__()
         self.Link = ''
         self.Title = ''
 
-    def sourceData(self, link, title):
+    def source_data(self, link, title):
         self.Link = link
         self.Title = title
 
     def run(self):
-        episode_number = []
-        size_in_mb = []
-        episode_link = []
         error = ''
         soup = ''
-        check = True
+        has_error = False
+        title_pattern = re.compile(r"(S\d\d)(E\d\d)+")
+        quality_pattern = re.compile(r"480p|720p|1080p")
+        result = {'Season 0': {}, 'Extras': {}}
 
         try:
             html = requests.get(self.Link)
@@ -976,61 +981,107 @@ class TodayDownloadThread(QtCore.QThread):
             online = html.ok
         except Exception as e:
             online = False
-            check = False
+            has_error = True
             error = str(e)
 
         if online:
-            episode_number = soup.select('.cell2')
-            size_in_mb = soup.select('.cell3')
-            episode_link = soup.select('.cell4 .hvr-icon-sink-away')
-            episode_number.reverse()
-            size_in_mb.reverse()
-            episode_link.reverse()
+            show_data = soup.select('.row2')
+            prev_title = ''
+            current_season = 0
+            active_season = ''
+            for row in show_data:
+                current_title = row.select(".cell2")[0].getText()
+                quality = row.select(".cell4")[0].getText()
+                size = row.select(".cell3")[0].getText()
+                link = row.select('.cell4 .hvr-icon-sink-away')[0].get("href")
+                title_match = title_pattern.search(current_title)
+                quality_match = quality_pattern.search(quality)
 
-        if check:
-            self.sign.emit(self.Title, episode_number, size_in_mb,
-                           episode_link, error, 3)
+                if current_title == prev_title:
+                    if title_match is None:
+                        result["Extras"][current_title]["Links"][
+                            quality[quality_match.start():]] = [size, link]
+                        continue
+                    else:
+                        result[f"Season {current_season}"][current_title[3:]][
+                            'Links'][quality[quality_match.start():]] = [size,
+                                                                         link]
+                        continue
+                else:
+                    prev_title = current_title
+
+                if title_match is None:
+                    if quality_match is None:
+                        result["Extras"].update({current_title: [size, link]})
+                    else:
+                        result["Extras"].update({current_title: {"Links": {
+                            quality[quality_match.start():]: [size, link]}}})
+                else:
+                    current_season = int(title_match.group(1)[1:])
+
+                    if 'Season 0' in result:
+                        result[f"Season {current_season}"] = result.pop(
+                            'Season 0')
+
+                    if active_season == current_season:
+                        if quality_match is None:
+                            result[f"Season {current_season}"].update(
+                                {current_title[3:]: [size, link]})
+                            continue
+                        else:
+                            result[f"Season {current_season}"].update({
+                                current_title[3:]: {"Links": {
+                                    quality[quality_match.start():]: [size,
+                                                                      link]}}})
+                            continue
+
+                    if quality_match is None:
+                        result.update({f"Season {current_season}": {
+                            current_title[3:]: [size, link]}})
+                        active_season = current_season
+                    else:
+                        result.update({f"Season {current_season}": {
+                            current_title[3:]: {"Links": {
+                                quality[quality_match.start():]: [size,
+                                                                  link]}}}})
+
+        if has_error:
+            self.sign.emit(self.Title, result, error, 3)
         else:
-            self.sign.emit('', episode_number, size_in_mb, episode_link, error,
-                           0)
+            self.sign.emit('', result, error, 0)
 
 
-class databaseThread(QtCore.QThread):
+class DatabaseThread(QtCore.QThread):
     """docstring for databaseThread"""
     sig = pyqtSignal(list)
     sig1 = pyqtSignal(str)
     sig2 = pyqtSignal(list, dict)
 
     def __init__(self):
-        super(databaseThread, self).__init__()
+        super(DatabaseThread, self).__init__()
         self.Result = {}
         self.Number = 0
         self.Show = ''
-        self.Episode = []
-        self.Size = []
-        self.Link = []
+        self.ShowData = {}
         self.Title = ""
 
-    def sourceData(self, number, result):
+    def get_available_shows(self, number, result):
         self.Result = result
         self.Number = number
 
-    def sourceData2(self, number, show):
+    def source_data2(self, number, show):
         self.Show = show
         self.Number = number
 
-    def sourceData3(self, number, episode_number, size_in_mb, episode_link,
-                    title):
+    def source_data3(self, number, result, title):
         self.Title = title
-        self.Episode = episode_number
-        self.Size = size_in_mb
-        self.Link = episode_link
+        self.ShowData = result
         self.Number = number
 
-    def sourceData4(self, number):
+    def source_data4(self, number):
         self.Number = number
 
-    def deleteLastRow(self):
+    def delete_last_row(self):
         self.Number = 5
 
     def run(self):
@@ -1041,14 +1092,18 @@ class databaseThread(QtCore.QThread):
         db.setPassword("230798")
         db.setDatabaseName("TodayTvSeries.db")
         db.open("ER40R", "230798")
+        sys.stdout = open('log.txt', 'a')
 
         if self.Number == 1:
             index = 0
             items = []
             for title in self.Result:
-                resulted.setQuery('SELECT tv.[Maze ID] FROM  TvMaze tv WHERE '
-                                  'tv.Name = "{}";'.format(title))
+                query.exec_(
+                    'SELECT tv.[Maze ID] FROM  TvMaze tv WHERE tv.Name = "{}";'
+                        .format(title)
+                )
                 available = resulted.record(0).value("Maze_ID")
+
                 if available is None:
                     items.append(title)
                     self.Result[title]['index'] = index
@@ -1065,7 +1120,7 @@ class databaseThread(QtCore.QThread):
             for title in self.Result:
                 if title == self.Show:
 
-                    query.exec_('''CREATE TABLE IF NOT EXISTS Todaytvseries (
+                    query.exec_('''CREATE TABLE IF NOT EXISTS TodayTvSeries (
                                     ID                 INTEGER,
                                     Name               VARCHAR,
                                     Link               VARCHAR UNIQUE,
@@ -1101,7 +1156,7 @@ class databaseThread(QtCore.QThread):
                     maze_id = self.Result[title]['ID']
                     name = self.Result[title]['Maze_Name']
 
-                    query.prepare('''INSERT INTO Todaytvseries (
+                    query.prepare('''INSERT INTO TodayTvSeries (
                                                                     Name,
                                                                     Link
                                                                 )
@@ -1113,6 +1168,7 @@ class databaseThread(QtCore.QThread):
                     query.bindValue(":Name", title)
                     query.bindValue(":Link", link)
                     query.exec_()
+                    print(f'inserted {title} and {link} on todaytvseries \n')
 
                     query.prepare('''INSERT INTO TvMaze (
                                                             Name,
@@ -1147,6 +1203,9 @@ class databaseThread(QtCore.QThread):
                     query.bindValue(":Day", day)
                     query.bindValue(":Maze_ID", maze_id)
                     query.exec_()
+                    print(f'inserted {name}, {schedule}, {description},'
+                          f' {running}, {day} and {maze_id} on TvMaze'
+                          f' \n')
                     break
             db.commit()
             db.close()
@@ -1154,20 +1213,77 @@ class databaseThread(QtCore.QThread):
 
         elif self.Number == 3:
             default = "0"
+
             series = """CREATE TABLE IF NOT EXISTS {} (
                             ID      INTEGER,
-                            Episode VARCHAR    NOT NULL,
+                            Season  INTEGER    NOT NULL,
+                            Episode INTEGER    NOT NULL,
                             Size    VARCHAR    NOT NULL,
-                            Link    VARCHAR    NOT NULL
+                            [480p]  VARCHAR    NOT NULL
                                             UNIQUE,
                             PRIMARY KEY (
                                 ID
                             )
                         );""".format(self.Title)
 
-            query.exec_(series)
+            extras = """CREATE TABLE IF NOT EXISTS Extras (
+                            ID      INTEGER,
+                            Name    VARCHAR    NOT NULL,
+                            Size    VARCHAR    NOT NULL,
+                            [480p]  VARCHAR    NOT NULL
+                                            UNIQUE,
+                            PRIMARY KEY (
+                                ID
+                            )
+                        );"""
 
-            for number, mb, urls in zip(self.Episode, self.Size, self.Link):
+            other_links = """CREATE TABLE IF NOT EXISTS Links (
+                                ID      INTEGER,
+                                Quality VARCHAR    NOT NULL,
+                                Size    VARCHAR    NOT NULL,
+                                Link    VARCHAR    NOT NULL
+                                                UNIQUE,
+                                PRIMARY KEY (
+                                    ID
+                                )
+                            );"""
+
+            query.exec_(series)
+            query.exec_(extras)
+            query.exec_(other_links)
+
+            for season in self.ShowData:
+                if season == 'Extras':
+                    for i, Extra in enumerate(season):
+                        xtra_key = list(Extra.keys())
+
+                        query.prepare('''INSERT INTO Extras (
+                                                            Name,
+                                                            Size,
+                                                            [480p]
+                                                        )
+                                                        VALUES (
+                                                            :Name,
+                                                            :Size,
+                                                            :Quality
+                                                        );''')
+
+                        query.bindValue(":Name", xtra_key[i])
+                        xtra = Extra.get(xtra_key[i])
+                        xtra_link = []
+
+                        if isinstance(xtra, list):
+                            query.bindValue(":Size", xtra[0])
+                            query.bindValue(":Quality", xtra[1])
+
+                        else:
+                            for link in xtra['Links']:
+                                query.bindValue(":Size", link[0])
+                                query.bindValue(":Quality", link[1])
+                        else:
+                            xtra_link.append(xtra["Links"])
+
+
                 query.prepare('''INSERT INTO {} (
                                                    Episode,
                                                    Size,
@@ -1190,7 +1306,7 @@ class databaseThread(QtCore.QThread):
                 with open('ShowData.json', 'w+') as handle:
                     json.dump(self.Result, handle)
 
-            query.prepare(f'''UPDATE Todaytvseries
+            query.prepare(f'''UPDATE TodayTvSeries
                                  SET [Database Episode] = :Database_Episode
                                WHERE Name = "{self.Title}";''')
 
@@ -1201,7 +1317,7 @@ class databaseThread(QtCore.QThread):
             db.close()
 
         elif self.Number == 4:
-            resulted.setQuery('SELECT tv.Name FROM Todaytvseries tv')
+            resulted.setQuery('SELECT tv.Name FROM TodayTvSeries tv')
             available = []
             i = 0
 
@@ -1210,10 +1326,10 @@ class databaseThread(QtCore.QThread):
                 i += 1
 
             db.close()
-            self.sig.emit(available)
+            self.tvSignal.emit(available)
 
         elif self.Number == 5:
-            query.exec_('DELETE FROM Todaytvseries WHERE ID = MAX(ID)')
+            query.exec_('DELETE FROM TodayTvSeries WHERE ID = MAX(ID)')
             query.exec_('DELETE FROM TvMaze WHERE ID = MAX(ID)')
             db.commit()
             db.close()
@@ -1222,6 +1338,7 @@ class databaseThread(QtCore.QThread):
 if __name__ == "__main__":
     import sys
     import json
+    import re
     import os
     import winreg
     import requests

@@ -1,2 +1,2 @@
-# Today
-The Today series download app for patrick project
+# Today Download Project
+Project built to download TvSeries and Movies
