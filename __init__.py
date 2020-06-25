@@ -474,7 +474,7 @@ class Ui_MainWindow(QtWidgets.QDialog):
 
     def web(self):
         search = self.lineEdit_2.text()
-        self.web_dialog.setupUi(Web)
+        self.web_dialog.setup_ui(Web)
         self.web_dialog.get_search_web_data(search)
         Web.exec_()
 
@@ -674,29 +674,29 @@ class Ui_Web(QtWidgets.QDialog):
         self.show = ''
         self.results = {}
 
-    def setupUi(self, Webs):
-        Webs.setObjectName("Web")
-        Webs.resize(548, 253)
+    def setup_ui(self, webs):
+        webs.setObjectName("Web")
+        webs.resize(548, 253)
         self.gridLayout.setContentsMargins(11, 11, 11, 11)
         self.gridLayout.setSpacing(6)
         self.gridLayout.setObjectName("gridLayout")
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum,
+        size_policy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum,
                                            QtWidgets.QSizePolicy.Fixed)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
+        size_policy.setHorizontalStretch(0)
+        size_policy.setVerticalStretch(0)
+        size_policy.setHeightForWidth(
             self.comboBox.sizePolicy().hasHeightForWidth())
-        self.comboBox.setSizePolicy(sizePolicy)
+        self.comboBox.setSizePolicy(size_policy)
         self.comboBox.setMaximumSize(QtCore.QSize(300, 16777215))
         self.comboBox.setObjectName("comboBox")
         self.gridLayout.addWidget(self.comboBox, 2, 0, 1, 1)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred,
+        size_policy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred,
                                            QtWidgets.QSizePolicy.Preferred)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
+        size_policy.setHorizontalStretch(0)
+        size_policy.setVerticalStretch(0)
+        size_policy.setHeightForWidth(
             self.scrollArea.sizePolicy().hasHeightForWidth())
-        self.scrollArea.setSizePolicy(sizePolicy)
+        self.scrollArea.setSizePolicy(size_policy)
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setObjectName("scrollArea")
         self.scrollAreaWidgetContents_2.setGeometry(
@@ -706,13 +706,13 @@ class Ui_Web(QtWidgets.QDialog):
         self.gridLayout_2.setContentsMargins(11, 11, 11, 11)
         self.gridLayout_2.setSpacing(6)
         self.gridLayout_2.setObjectName("gridLayout_2")
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred,
+        size_policy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred,
                                            QtWidgets.QSizePolicy.Expanding)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
+        size_policy.setHorizontalStretch(0)
+        size_policy.setVerticalStretch(0)
+        size_policy.setHeightForWidth(
             self.textBrowser.sizePolicy().hasHeightForWidth())
-        self.textBrowser.setSizePolicy(sizePolicy)
+        self.textBrowser.setSizePolicy(size_policy)
         self.textBrowser.setAutoFillBackground(True)
         self.textBrowser.setFrameShape(QtWidgets.QFrame.NoFrame)
         self.textBrowser.setFrameShadow(QtWidgets.QFrame.Plain)
@@ -727,13 +727,13 @@ class Ui_Web(QtWidgets.QDialog):
         self.gridLayout_2.addWidget(self.frame, 0, 1, 1, 1)
         self.scrollArea.setWidget(self.scrollAreaWidgetContents_2)
         self.gridLayout.addWidget(self.scrollArea, 3, 0, 1, 3)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum,
+        size_policy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum,
                                            QtWidgets.QSizePolicy.Fixed)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
+        size_policy.setHorizontalStretch(0)
+        size_policy.setVerticalStretch(0)
+        size_policy.setHeightForWidth(
             self.spinBox.sizePolicy().hasHeightForWidth())
-        self.spinBox.setSizePolicy(sizePolicy)
+        self.spinBox.setSizePolicy(size_policy)
         self.spinBox.setMaximumSize(QtCore.QSize(100, 16777215))
         self.spinBox.setCorrectionMode(
             QtWidgets.QAbstractSpinBox.CorrectToPreviousValue)
@@ -753,8 +753,8 @@ class Ui_Web(QtWidgets.QDialog):
         self.pushButton.setObjectName("pushButton")
         self.gridLayout.addWidget(self.pushButton, 4, 0, 1, 2)
         self.pushButton.setEnabled(False)
-        self.retranslateUi(Webs)
-        QtCore.QMetaObject.connectSlotsByName(Webs)
+        self.retranslateUi(webs)
+        QtCore.QMetaObject.connectSlotsByName(webs)
 
     def retranslateUi(self, Webs):
         _translate = QtCore.QCoreApplication.translate
