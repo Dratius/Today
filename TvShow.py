@@ -12,6 +12,9 @@ class Show:
         self.Schedule = None
         self.Maze_ID = None
         self.Maze_name = ""
+        self.Extras = {}
+        self.Season = [self.Extras]
+        self.Episode = {}
 
     def update_info(self, info: Dict):
         self.Description = info["summary"]
@@ -19,3 +22,6 @@ class Show:
         self.Schedule = info["schedule"]
         self.Maze_ID = info["id"]
         self.Maze_name = info["name"]
+
+    def __str__(self):
+        return self.Title
