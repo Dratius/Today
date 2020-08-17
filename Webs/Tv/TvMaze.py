@@ -1,9 +1,9 @@
 
-from Website import Webs
-from DataManager import Storage
+from Webs.Series import Scraper
+from Webs.Tv.DataManager import Storage
 
 
-class TvMaze(Webs):
+class TvMaze(Scraper):
     def __init__(self, title: str, link: str):
         super().__init__()
         self.payload = {"q": title}
@@ -19,6 +19,7 @@ class TvMaze(Webs):
 
     def get_info(self, html):
         store = Storage.get_instance()
-        if len(html.json()) > 0:
-            tv_show = store.get_show(self.__title, self.__link)
-            tv_show.update_info(html.json())
+        if html.ok:
+            if len(html.json()) > 0:
+                tv_show = store.get_show(self.__title, self.__link)
+                tv_show.update_info(html.json())
