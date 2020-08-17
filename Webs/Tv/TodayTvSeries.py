@@ -1,20 +1,18 @@
 import re
 from bs4 import BeautifulSoup
 
-from TvShow import Show
-from Website import Webs
-from DataManager import Storage
+from Webs.Series import Scraper
+from Webs.Tv.DataManager import Storage
 
 
-class TodayTv(Webs):
+class TodayTv(Scraper):
     def __init__(self, show: str, search_limit: int = 30):
         super().__init__()
         self.store = Storage()
         self.__payload = {
             "searchword": show,
             "searchphrase": "all",
-            "limit": search_limit
-                          }
+            "limit": search_limit}
 
         self.__search_series = "search-series"
         self.__title_tags = '.uk-article-titletag a'
@@ -39,16 +37,15 @@ class TodayTv(Webs):
         @type tv_show: Show
         """
         self._session.mount(self.TodayTvSeries, self._adapter)
-        response, severe = self.html_response(tv_show.Link, 5)
+        response = self.search(tv_show.Link)
 
         title_pattern = re.compile(r"(S\d\d)(E\d\d)+")
         quality_pattern = re.compile(r"480p|720p|1080p")
         current_season = 0
-        active_season = 0
         prev_row_episode = ""
 
-        if not severe:
-            soup = BeautifulSoup(response, "html.parser")
+        if response.ok:
+            soup = BeautifulSoup(response.text, "html.parser")
             tv_show_data = soup.select(".row2")
             row: BeautifulSoup
 
@@ -101,42 +98,26 @@ class TodayTv(Webs):
                                              quality=episode_quality
                                              )
                 else:
-                    current_season = int(title_matched.group(1)[1:])
+                    current_season = capacity = int(title_matched.group(1)[1:])
 
-                    if active_season == current_season:
-                        # operating on the same season
-                        episodes = tv_show.Season[current_season]
-                        if quality_matched is None:
-                            self.store.update_episode_section(
-                                episode_section=episodes,
-                                episode=curr_row_episode[3:],
-                                quality="480p",
-                                link=episode_link,
-                                size=episode_size
-                            )
-                            continue
-                        else:
-                            self.store.update_episode_section(
-                                episode_section=episodes,
-                                episode=curr_row_episode[3:],
-                                quality=episode_quality,
-                                link=episode_link,
-                                size=episode_size
-                            )
-                            continue
-                    elif quality_matched is None:
-                        self.store.add_season(tv_show,
-                                              episode=curr_row_episode[3:],
-                                              quality="480p",
-                                              link=episode_link,
-                                              size=episode_size
-                                              )
-                        active_season = current_season
+                    if len(tv_show.Season) - 1 < capacity:
+                        tv_show.Season.extend(dict() for i in range(capacity))
+
+                    episodes = tv_show.Season[current_season]
+
+                    if quality_matched is None:
+                        self.store.update_episode_section(
+                            episode_section=episodes,
+                            episode=curr_row_episode[3:],
+                            quality="480p",
+                            link=episode_link,
+                            size=episode_size
+                        )
                     else:
-                        self.store.add_season(tv_show,
-                                              episode=curr_row_episode[3:],
-                                              quality=episode_quality,
-                                              link=episode_link,
-                                              size=episode_size
-                                              )
-                        active_season = current_season
+                        self.store.update_episode_section(
+                            episode_section=episodes,
+                            episode=curr_row_episode[3:],
+                            quality=episode_quality,
+                            link=episode_link,
+                            size=episode_size
+                        )

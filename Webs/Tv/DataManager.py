@@ -1,5 +1,5 @@
-from typing import Any, Dict, List
-from TvShow import Show
+from typing import Dict
+from Webs.TvShow import Show
 
 
 class Storage:
@@ -41,17 +41,6 @@ class Storage:
                         "Link": new["link"],
                         "Size": new["size"]
                     }}}})
-
-    @staticmethod
-    def add_season(tv_show: Show, **new):
-        tv_show.Season.append({
-            new["episode"]: {
-                "Episode": new["episode"],
-                "Links": {new["quality"]: {
-                    "Quality": new["quality"],
-                    "Link": new["link"],
-                    "Size": new["size"]
-                }}}})
 
     @staticmethod
     def update_quality_section(quality_section: Dict, **update):

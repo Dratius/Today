@@ -1,11 +1,11 @@
+from requests.adapters import HTTPAdapter
 from abc import ABCMeta, abstractmethod
+from requests.models import Response
 from typing import Dict
 import requests
-from requests.adapters import HTTPAdapter
-from requests.models import Response
 
 
-class Webs(metaclass=ABCMeta):
+class Scraper(metaclass=ABCMeta):
 
     def __init__(self):
         self.__html = Response()
@@ -18,9 +18,9 @@ class Webs(metaclass=ABCMeta):
         self._session = requests.Session()
         self._adapter = HTTPAdapter(max_retries=self.max_retries)
 
-    def search(self, link: str, payload: Dict, timeout: int = 5) -> Response:
+    def search(self, link, payload: Dict = None, timeout: int = 5) -> Response:
         self._session.mount(link, self._adapter)
-        response, severe = self.html_response(link, timeout, payload)
+        response, severe = self.html_response(link, payload, timeout)
 
         if not severe:
             return response
@@ -28,13 +28,11 @@ class Webs(metaclass=ABCMeta):
             # TODO:Handle Errors
             pass
 
-    def html_response(self, link: str, timeout: int, payload: Dict = None):
-        self.__html = self._session.get(link, params=payload, timeout=timeout)
+    def html_response(self, link: str, payload: Dict, timeout: int):
         try:
-            self.__html.raise_for_status()
-        except requests.exceptions.HTTPError as exc:
-            return exc, self.__html.status_code
-        except requests.exceptions.ReadTimeout as exc:
+            self.__html = self._session.get(
+                link, params=payload, timeout=timeout)
+        except requests.exceptions.Timeout as exc:
             return exc, 1
         except requests.exceptions.ConnectionError as exc:
             return exc, 2
