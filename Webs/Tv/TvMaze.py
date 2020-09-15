@@ -1,4 +1,3 @@
-
 from Webs.Series import Scraper
 from Webs.Tv.DataManager import Storage
 

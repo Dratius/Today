@@ -4,6 +4,8 @@ from requests.models import Response
 from typing import Dict
 import requests
 
+from Webs.TvShow import Show
+
 
 class Scraper(metaclass=ABCMeta):
 
@@ -13,7 +15,7 @@ class Scraper(metaclass=ABCMeta):
         self.TodayTvSeries = "http://www.todaytvseries2.com/"
         self.TvMaze = "http://api.tvmaze.com/"
         self.IndexOf1 = "http://dl.new1music.ir/Serial/"
-        self.IndexOf2 = "http://dl4.tvto.ga/Series/"
+        self.IndexOfTvTo = "http://dl4.tvto.ga/Series/"
         self.IndexOfTvSeries = "https://indexoftvseries.com/"
         self._session = requests.Session()
         self._adapter = HTTPAdapter(max_retries=self.max_retries)
@@ -40,5 +42,9 @@ class Scraper(metaclass=ABCMeta):
         return self.__html, 0
 
     @abstractmethod
-    def get_info(self, html):
+    def get_info(self, html: Response):
+        ...
+
+    @abstractmethod
+    def get_data(self, tv_show: Show):
         ...

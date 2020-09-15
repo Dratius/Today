@@ -1,12 +1,14 @@
 from dataclasses import dataclass
-from typing import Dict
+from typing import Dict, Union
 
 
 @dataclass
 class Show:
+    memory: Dict[str, Union[str, int]]
+
     def __init__(self, title: str, link: str):
         self.Title = title
-        self.Link = link
+        self.Url = link
         self.Description = ""
         self.Status = None
         self.Schedule = None
@@ -14,7 +16,10 @@ class Show:
         self.Maze_name = ""
         self.Extras = {}
         self.Season = [self.Extras]
-        self.Episode = {}
+        self.memory = {"last episode": "0",
+                       "last season": 0,
+                       "prev quality matched": ""
+                       }
 
     def update_info(self, info: Dict):
         self.Description = info["summary"]
