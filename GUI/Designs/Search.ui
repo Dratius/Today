@@ -1,0 +1,490 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1036</width>
+    <height>391</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>TodaytvSeries</string>
+  </property>
+  <property name="windowIcon">
+   <iconset>
+    <normaloff>C:/Downloads/3dorange.jpg</normaloff>C:/Downloads/3dorange.jpg</iconset>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="0" column="0">
+     <widget class="QLineEdit" name="tvSearch">
+      <property name="toolTip">
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Search The Web&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      </property>
+      <property name="placeholderText">
+       <string>Search</string>
+      </property>
+      <property name="clearButtonEnabled">
+       <bool>false</bool>
+      </property>
+     </widget>
+    </item>
+    <item row="9" column="3">
+     <widget class="QSpinBox" name="toEpisodeSpinBox">
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
+     </widget>
+    </item>
+    <item row="10" column="3">
+     <widget class="QRadioButton" name="radioButtonFromTo">
+      <property name="text">
+       <string>From And To Specifics</string>
+      </property>
+     </widget>
+    </item>
+    <item row="11" column="2" colspan="2">
+     <widget class="QRadioButton" name="radioButtonFromSpecifics">
+      <property name="text">
+       <string>From Specific Episode (current season ONLY)</string>
+      </property>
+     </widget>
+    </item>
+    <item row="7" column="2">
+     <widget class="QSpinBox" name="fromSeasonSpinBox"/>
+    </item>
+    <item row="8" column="2">
+     <widget class="QLabel" name="labelTo">
+      <property name="text">
+       <string>To</string>
+      </property>
+      <property name="buddy">
+       <cstring>toSeasonSpinBox</cstring>
+      </property>
+     </widget>
+    </item>
+    <item row="9" column="2">
+     <widget class="QSpinBox" name="toSeasonSpinBox">
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
+     </widget>
+    </item>
+    <item row="17" column="0">
+     <widget class="QProgressBar" name="progressBar">
+      <property name="value">
+       <number>24</number>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="0">
+     <widget class="QLCDNumber" name="countdownLcdNumber">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>16777215</width>
+        <height>40</height>
+       </size>
+      </property>
+      <property name="toolTip">
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Time Till Next Release&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      </property>
+      <property name="frameShape">
+       <enum>QFrame::StyledPanel</enum>
+      </property>
+      <property name="frameShadow">
+       <enum>QFrame::Sunken</enum>
+      </property>
+      <property name="lineWidth">
+       <number>7</number>
+      </property>
+      <property name="smallDecimalPoint">
+       <bool>false</bool>
+      </property>
+      <property name="mode">
+       <enum>QLCDNumber::Dec</enum>
+      </property>
+      <property name="segmentStyle">
+       <enum>QLCDNumber::Filled</enum>
+      </property>
+      <property name="intValue" stdset="0">
+       <number>65</number>
+      </property>
+     </widget>
+    </item>
+    <item row="10" column="2">
+     <widget class="QRadioButton" name="radioButtonSpecifics">
+      <property name="text">
+       <string>Specific Episode</string>
+      </property>
+      <property name="checked">
+       <bool>true</bool>
+      </property>
+     </widget>
+    </item>
+    <item row="17" column="2" colspan="2">
+     <widget class="QPushButton" name="pushButtonSend">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="text">
+       <string>Send to IDM</string>
+      </property>
+     </widget>
+    </item>
+    <item row="7" column="3">
+     <widget class="QSpinBox" name="fromEpisodeSpinBox"/>
+    </item>
+    <item row="15" column="0">
+     <widget class="Line" name="line">
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+     </widget>
+    </item>
+    <item row="6" column="2">
+     <widget class="QLabel" name="labelSeason">
+      <property name="text">
+       <string>Season</string>
+      </property>
+      <property name="buddy">
+       <cstring>fromSeasonSpinBox</cstring>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="3">
+     <widget class="QLineEdit" name="webSearch">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="placeholderText">
+       <string>Search Web</string>
+      </property>
+      <property name="clearButtonEnabled">
+       <bool>true</bool>
+      </property>
+     </widget>
+    </item>
+    <item row="6" column="3">
+     <widget class="QLabel" name="labelEpisode">
+      <property name="text">
+       <string>Episode</string>
+      </property>
+      <property name="buddy">
+       <cstring>fromEpisodeSpinBox</cstring>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="2" colspan="2">
+     <widget class="QTextBrowser" name="episodeBrowser">
+      <property name="maximumSize">
+       <size>
+        <width>16777215</width>
+        <height>30</height>
+       </size>
+      </property>
+      <property name="font">
+       <font>
+        <family>Eras Medium ITC</family>
+        <pointsize>11</pointsize>
+       </font>
+      </property>
+      <property name="focusPolicy">
+       <enum>Qt::StrongFocus</enum>
+      </property>
+      <property name="contextMenuPolicy">
+       <enum>Qt::DefaultContextMenu</enum>
+      </property>
+      <property name="toolTip">
+       <string>Current Episode</string>
+      </property>
+      <property name="autoFillBackground">
+       <bool>false</bool>
+      </property>
+      <property name="frameShape">
+       <enum>QFrame::WinPanel</enum>
+      </property>
+      <property name="frameShadow">
+       <enum>QFrame::Sunken</enum>
+      </property>
+      <property name="lineWidth">
+       <number>4</number>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="2">
+     <widget class="QLabel" name="labelWeb">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>60</width>
+        <height>16777215</height>
+       </size>
+      </property>
+      <property name="text">
+       <string>Web Search</string>
+      </property>
+      <property name="buddy">
+       <cstring>webSearch</cstring>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="2" colspan="2">
+     <widget class="QTreeWidget" name="seasonTreeWidget">
+      <column>
+       <property name="text">
+        <string notr="true">1</string>
+       </property>
+      </column>
+     </widget>
+    </item>
+    <item row="0" column="1">
+     <widget class="Line" name="line_2">
+      <property name="orientation">
+       <enum>Qt::Vertical</enum>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1036</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>File</string>
+    </property>
+    <addaction name="actionNew"/>
+    <addaction name="actionQuit"/>
+   </widget>
+   <widget class="QMenu" name="menuSettings">
+    <property name="title">
+     <string>Settings</string>
+    </property>
+    <addaction name="actionPreferences"/>
+    <addaction name="separator"/>
+    <addaction name="actionCheck_for_updates"/>
+   </widget>
+   <widget class="QMenu" name="menuHelp">
+    <property name="title">
+     <string>Help</string>
+    </property>
+    <addaction name="separator"/>
+    <addaction name="actionManual"/>
+    <addaction name="actionAbout"/>
+    <addaction name="actionVersion"/>
+   </widget>
+   <widget class="QMenu" name="menuWindows">
+    <property name="title">
+     <string>Windows</string>
+    </property>
+    <addaction name="actionCalendar"/>
+    <addaction name="separator"/>
+   </widget>
+   <addaction name="menuFile"/>
+   <addaction name="menuWindows"/>
+   <addaction name="menuSettings"/>
+   <addaction name="menuHelp"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <widget class="QDockWidget" name="dockWidget">
+   <attribute name="dockWidgetArea">
+    <number>1</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents">
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <widget class="QCalendarWidget" name="calendarWidget"/>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <action name="actionNew">
+   <property name="text">
+    <string>New</string>
+   </property>
+  </action>
+  <action name="actionQuit">
+   <property name="text">
+    <string>Quit</string>
+   </property>
+  </action>
+  <action name="actionPreferences">
+   <property name="text">
+    <string>Preferences</string>
+   </property>
+  </action>
+  <action name="actionManual">
+   <property name="text">
+    <string>Manual</string>
+   </property>
+  </action>
+  <action name="actionAbout">
+   <property name="text">
+    <string>About Developer</string>
+   </property>
+  </action>
+  <action name="actionVersion">
+   <property name="text">
+    <string>Version</string>
+   </property>
+  </action>
+  <action name="actionQuit_2">
+   <property name="text">
+    <string>Open</string>
+   </property>
+  </action>
+  <action name="actionCalendar">
+   <property name="text">
+    <string>Calendar</string>
+   </property>
+  </action>
+  <action name="actionCheck_for_updates">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Check for updates.</string>
+   </property>
+  </action>
+ </widget>
+ <tabstops>
+  <tabstop>tvSearch</tabstop>
+  <tabstop>webSearch</tabstop>
+  <tabstop>episodeBrowser</tabstop>
+  <tabstop>seasonTreeWidget</tabstop>
+  <tabstop>fromSeasonSpinBox</tabstop>
+  <tabstop>fromEpisodeSpinBox</tabstop>
+  <tabstop>toSeasonSpinBox</tabstop>
+  <tabstop>toEpisodeSpinBox</tabstop>
+  <tabstop>radioButtonSpecifics</tabstop>
+  <tabstop>radioButtonFromTo</tabstop>
+  <tabstop>radioButtonFromSpecifics</tabstop>
+  <tabstop>pushButtonSend</tabstop>
+  <tabstop>calendarWidget</tabstop>
+ </tabstops>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>radioButtonSpecifics</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>toSeasonSpinBox</receiver>
+   <slot>setDisabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>666</x>
+     <y>271</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>667</x>
+     <y>245</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>radioButtonSpecifics</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>toEpisodeSpinBox</receiver>
+   <slot>setDisabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>702</x>
+     <y>268</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>759</x>
+     <y>251</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>radioButtonFromTo</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>toSeasonSpinBox</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>817</x>
+     <y>273</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>692</x>
+     <y>240</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>radioButtonFromTo</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>toEpisodeSpinBox</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>773</x>
+     <y>267</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>785</x>
+     <y>252</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>radioButtonFromSpecifics</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>toSeasonSpinBox</receiver>
+   <slot>setDisabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>645</x>
+     <y>288</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>648</x>
+     <y>249</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>radioButtonFromSpecifics</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>toEpisodeSpinBox</receiver>
+   <slot>setDisabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>731</x>
+     <y>288</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>763</x>
+     <y>248</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>

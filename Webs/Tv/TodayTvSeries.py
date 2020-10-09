@@ -1,4 +1,3 @@
-import re
 from bs4 import BeautifulSoup
 
 from Webs.Series import Scraper

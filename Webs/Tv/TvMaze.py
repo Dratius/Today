@@ -1,11 +1,16 @@
 from Webs.Series import Scraper
 from Webs.Tv.DataManager import Storage
+from Webs.TvShow import Show
 
 
 class TvMaze(Scraper):
+    def get_data(self, tv_show: Show):
+        pass
+
     def __init__(self, title: str, link: str):
         super().__init__()
         self.payload = {"q": title}
+        self.store = Storage.get_instance()
         self.__title = title
         self.__link = link
         self.__ShowSearch = "search/shows"
@@ -17,8 +22,7 @@ class TvMaze(Scraper):
         self.get_info(html)
 
     def get_info(self, html):
-        store = Storage.get_instance()
         if html.ok:
             if len(html.json()) > 0:
-                tv_show = store.get_show(self.__title, self.__link)
+                tv_show = self.store.get_show(self.__title, self.__link)
                 tv_show.update_info(html.json())
