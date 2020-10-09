@@ -1,14 +1,10 @@
 from dataclasses import dataclass
-from typing import Dict, Union
 
 
 @dataclass
 class Show:
-    memory: Dict[str, Union[str, int]]
-
     def __init__(self, title: str, link: str):
         self.Title = title
-        self.Url = link
         self.Description = ""
         self.Status = None
         self.Schedule = None
@@ -27,9 +23,3 @@ class Show:
         self.Schedule = info["schedule"]
         self.Maze_ID = info["id"]
         self.Maze_name = info["name"]
-
-    def __str__(self):
-        return self.Title
-
-    def __repr__(self):
-        return self.Description

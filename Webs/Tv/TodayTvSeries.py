@@ -39,7 +39,6 @@ class TodayTv(Scraper):
         if response.ok:
             soup = BeautifulSoup(response.text, "html.parser")
             tv_show_data = soup.select(".row2")
-
             row: BeautifulSoup
             for row in tv_show_data:
                 curr_row_episode = row.select(".cell2")[0].getText()
