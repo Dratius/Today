@@ -851,16 +851,7 @@ class Ui_Web(QtWidgets.QDialog):
 
         if i == 0:
             critical.setIcon(QtWidgets.QMessageBox.Critical)
-            critical.setText(f"Adding process could'nt be completed due to "
-                             f"network issues\n "
-                             f"\n"
-                             f"Site Might be under maintenance or blocked ip "
-                             f"or\n "
-                             f"unavailable internet connection..\n"
-                             f"\n"
-                             f"\n"
-                             f"For more Info on Error:\n"
-                             f"{error}")
+            critical.setText()
             critical.setWindowTitle("TIMEOUT ERROR!!!!")
             critical.setStandardButtons(critical.Ok | critical.Cancel)
             critical.setDefaultButton(QtWidgets.QMessageBox.Ok)

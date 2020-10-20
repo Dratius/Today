@@ -12,6 +12,10 @@ class Scraper(metaclass=ABCMeta):
     def __init__(self):
         self.__html = Response()
         self.max_retries = 5
+        self.error = {
+            "error": 0,
+            "title": "",
+            "message": ""}
         self.TodayTvSeries = "http://www.todaytvseries2.com/"
         self.TvMaze = "http://api.tvmaze.com/"
         self.IndexOf1 = "http://dl.new1music.ir/Serial/"
@@ -27,8 +31,24 @@ class Scraper(metaclass=ABCMeta):
         if not severe:
             return response
         else:
-            # TODO:Handle Errors
-            pass
+            self.handle_error(response, severity)
+    
+    def handle_error(self, response, severity):
+        # TODO: Handle Exceptions by raising errors.
+        message = "Adding process could'nt be completed due to network issues"
+                    "\n\n"
+                    "Site Might be under maintenance or blocked ip or\n "
+                    "unavailable internet connection..\n\n\n"
+                    f"For more Info on Error:\n {response}"
+        if severity == 1:
+            self.error["error"] = 1
+            self.error["title"] = "TIMEOUT"
+            self.error["message"] = message
+        else:
+            self.error["error"] = 2
+            self.error["title"] = "CONNECTION ERROR"
+            self.error["message"] = message
+
 
     def html_response(self, link: str, payload: Dict, timeout: int):
         try:
