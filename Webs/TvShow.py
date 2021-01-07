@@ -5,6 +5,7 @@ from dataclasses import dataclass
 class Show:
     def __init__(self, title: str, link: str):
         self.Title = title
+        self.Url = link
         self.Description = ""
         self.Status = None
         self.Schedule = None
@@ -17,7 +18,7 @@ class Show:
                        "prev quality matched": ""
                        }
 
-    def update_info(self, info: Dict):
+    def update_info(self, info):
         self.Description = info["summary"]
         self.Status = info["status"] == "Running"
         self.Schedule = info["schedule"]

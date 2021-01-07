@@ -18,11 +18,12 @@ class TvMaze(Scraper):
         self.__EmbedEpisodes = {"embed": "episodes"}
         self.__Lookup = "lookup/shows"
         self.__Shows = "shows/"
-        html = self.search(self.TvMaze, self.payload)
+        html = self.search(self.TvMaze + self.__SingleSearch, self.payload)
         self.get_info(html)
 
     def get_info(self, html):
         if html.ok:
-            if len(html.json()) > 0:
+            book = html.json()
+            if len(book) > 0:
                 tv_show = self.store.get_show(self.__title, self.__link)
-                tv_show.update_info(html.json())
+                tv_show.update_info(book)

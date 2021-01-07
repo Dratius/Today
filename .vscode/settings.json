@@ -11,5 +11,6 @@
   "python.testing.unittestEnabled": false,
   "python.testing.promptToConfigure": false,
   "files.autoSave": "onWindowChange",
-  "python.formatting.provider": "black"
+  "python.formatting.provider": "black",
+  "python.pythonPath": "e:\\Apps\\cond\\python.exe"
 }

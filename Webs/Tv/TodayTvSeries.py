@@ -7,7 +7,7 @@ from Webs.Tv.DataManager import Storage
 class TodayTv(Scraper):
     def __init__(self, show: str, search_limit: int = 30):
         super().__init__()
-        self.store = Storage()
+        self.store = Storage.get_instance()
         self.__payload = {
             "searchword": show,
             "searchphrase": "all",
@@ -19,6 +19,7 @@ class TodayTv(Scraper):
         html = self.search(
             self.TodayTvSeries + self.__search_series, self.__payload
         )
+            
         self.get_info(html)
 
     def get_info(self, html):
@@ -55,3 +56,4 @@ class TodayTv(Scraper):
                     url=episode_link,
                     episode_url=tv_show.Url
                 )
+            return True

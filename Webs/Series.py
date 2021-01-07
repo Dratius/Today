@@ -5,6 +5,7 @@ from typing import Dict
 import requests
 
 from Webs.TvShow import Show
+import TvExceptions
 
 
 class Scraper(metaclass=ABCMeta):
@@ -27,8 +28,8 @@ class Scraper(metaclass=ABCMeta):
         if not severe:
             return response
         else:
-            # TODO:Handle Errors
-            pass
+            title, message = self.handle_error(response, severe)
+            raise TvExceptions.TvException(title, message)
 
     def html_response(self, link: str, payload: Dict, timeout: int):
         try:
@@ -48,3 +49,22 @@ class Scraper(metaclass=ABCMeta):
     @abstractmethod
     def get_data(self, tv_show: Show):
         ...
+
+    @staticmethod
+    def handle_error(error, severity):
+        if severity == 1:
+            title = "TIMEOUT ERROR"
+            message = (f" TIMEOUT, can't maintain connection.\n\n\n"
+                       f"Site Might be under maintenance or blocked ip or\n \n"
+                       f"unavailable internet connection..\n\n\n\n"
+                       f"For more Info on Error:\n{error}")
+            return title, message
+        else:
+            title = "CONNECTION ERROR"
+            message = (f" SERVER DOWN, can't maintain connection.\n\n\n"
+                       f"Site Might be under maintenance or blocked ip or\n \n"
+                       f"unavailable internet connection..\n\n\n\n"
+                       f"For more Info on Error:\n{error}")
+            return title, message
+
+
