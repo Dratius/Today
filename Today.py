@@ -3,7 +3,6 @@ from PyQt5.QtCore import pyqtSignal
 from GUI.Search import Ui_MainWindow
 from GUI.Web import Ui_WebForm
 from Webs.TvShow import Show
-from Webs.Tv.DataManager import Storage
 from Webs import TV
 import TvExceptions
 

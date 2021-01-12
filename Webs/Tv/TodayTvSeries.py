@@ -1,7 +1,7 @@
 from bs4 import BeautifulSoup
 
 from Webs.Series import Scraper
-from Webs.Tv.DataManager import Storage
+from Database.DataManager import Storage
 
 
 class TodayTv(Scraper):
